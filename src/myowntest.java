@@ -19,7 +19,7 @@ public class myowntest {
 	    String relation_name = t.children.get(0).symbol;
 	    Relation relation_reference=s.createRelation(relation_name,schema);
 	}
-	public static void insert(SchemaManager s,ParseTree t){
+	public static void insert(MainMemory mem, SchemaManager s,ParseTree t){
 		if(s.relationExists(t.children.get(0).symbol)){
 	    	Relation r = s.getRelation(t.children.get(0).symbol);
 	    	System.out.println("relation exists");
@@ -37,11 +37,13 @@ public class myowntest {
 		    		tuple.setField(names.get(i).symbol, values.get(i).symbol);
 	    		}
 	    	}
-		    //wyh
-		    //Block block_reference=mem.getBlock(0); //access to memory block 0
-		    //block_reference.clear(); //clear the block		    
-		    //block_reference.setTuple(0,tuple); // You can also use appendTuple()
-	    }
+		    Block block_reference;
+		    block_reference=mem.getBlock(0);
+		    block_reference.clear(); //clear the block
+		    block_reference.appendTuple(tuple); // append the tuple
+		    r.setBlock(r.getNumOfBlocks(), 0);
+		    
+		}
 	    else{
 	    	System.err.println("relatoin not exists");
 	    	//throwexception relation not exist and go back to command input or stop
@@ -71,7 +73,7 @@ public class myowntest {
 	    String insert = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\")";
 	    Lexer ins =new Lexer(insert);
 	    ParseTree ins_tree = ins.gettree();
-	    insert(schema_manager, ins_tree);
+	    insert(mem, schema_manager, ins_tree);
 	    //-------------------------
 	    
 	    System.out.println("done");
