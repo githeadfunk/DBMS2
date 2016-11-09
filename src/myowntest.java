@@ -37,6 +37,7 @@ public class myowntest {
 		    		tuple.setField(names.get(i).symbol, values.get(i).symbol);
 	    		}
 	    	}
+		    //wyh
 		    //Block block_reference=mem.getBlock(0); //access to memory block 0
 		    //block_reference.clear(); //clear the block		    
 		    //block_reference.setTuple(0,tuple); // You can also use appendTuple()
