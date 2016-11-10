@@ -15,6 +15,7 @@ public class PTConstruct {
 		case "select": t = select();break;
 		case "create": t = create();break;
 		case "insert": t = insert();break;
+		case "drop":   t = drop();break;
 		default: t = create();
 		}
 		return t;
@@ -242,6 +243,12 @@ public class PTConstruct {
 		t.children.add(rel_name);
 		t.children.add(field_name);
 		t.children.add(field_type);
+		return t;
+	}
+	
+	public ParseTree drop(){
+		System.out.println(statement.get(2));
+		ParseTree t = new ParseTree(statement.get(2));
 		return t;
 	}
 }
