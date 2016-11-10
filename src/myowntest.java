@@ -69,6 +69,8 @@ public class myowntest {
 	    }
 	    //-------------------------
 	    
+	    //select test
+	    
 	    //-----insert tuples-----
 	    String insert = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\")";
 	    Lexer ins =new Lexer(insert);
