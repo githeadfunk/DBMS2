@@ -1,6 +1,8 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Scanner;
+
 import storageManager.*;
 
 public class myowntest {
@@ -50,6 +52,11 @@ public class myowntest {
 	    }
 	}
 	
+	public static void drop(SchemaManager s,ParseTree t){
+		
+	}
+
+	
 	public static void main(String[] args){
 		//-----Initialize-----
 		MainMemory mem=new MainMemory();
@@ -59,9 +66,13 @@ public class myowntest {
 	    disk.resetDiskTimer();
 	    //--------------------
 	    
-	    //-----create relation-----
+	    
+	    //--------------------
+	    //String raw_statement = "DROP TABLE course";
+		String raw_statement = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
+	    //String raw_statement = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\")";
 		//String raw_statement = "INSERT INTO course VALUES (\"2 d d\", 0, 100, 100, \"E\'  f\")";
-	    String raw_statement = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
+	    //String raw_statement = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
 	    Lexer lex = new Lexer(raw_statement);
 	    ParseTree tree = lex.gettree();
 	    if(tree.symbol.equals("create")){
@@ -80,5 +91,11 @@ public class myowntest {
 	    
 	    System.out.println("done");
 	    
+		switch(tree.symbol){
+		case "create": create(schema_manager, tree);break;
+		case "insert": insert(mem, schema_manager, tree);break;
+		case "drop": drop(schema_manager, tree);break;
+		}
+		
 	}
 }
