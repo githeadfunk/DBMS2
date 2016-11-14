@@ -147,7 +147,9 @@ public class Lexer {
 		ArrayList<String> mylist = new ArrayList<String>();
 		for (Token token : tokens){
 			mylist.add(token.data);
+			//System.out.println(token);
 		}
+		System.out.println(mylist.size());
 		PTConstruct con = new PTConstruct(mylist);
 		ParseTree t;
 		t = con.construct();
