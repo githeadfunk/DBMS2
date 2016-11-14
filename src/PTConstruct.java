@@ -103,7 +103,7 @@ public class PTConstruct {
 		List<ParseTree> tables = new ArrayList<ParseTree>();
 		int end_index = 0;
 		if (where_index == 0){
-			end_index = this.statement.size()-1;
+			end_index = this.statement.size();
 		}
 		else{
 			end_index = where_index;
@@ -146,7 +146,7 @@ public class PTConstruct {
 			}	
 			// add the last subcondition after the last AND OR
 			List<ParseTree> subcondition = new ArrayList<ParseTree>(); 
-			for (int k = last+1; k< searchindex-1; k++){
+			for (int k = last+1; k< searchindex; k++){
 				subcondition.add(new ParseTree(this.statement.get(k)));
 				System.out.println("subcondtion:"+ this.statement.get(k));		
 			}
