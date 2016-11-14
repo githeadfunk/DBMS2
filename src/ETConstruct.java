@@ -19,14 +19,14 @@ public class ETConstruct {
 	public ExpressionTree select(){
 		//node of "cross"
 		ExpressionTree pi = new ExpressionTree("null");
-		List<ExpressionTree> tables_for_cross = new ArrayList<ExpressionTree>();
+		List<ParseTree> tables_for_cross = new ArrayList<ParseTree>();
 		// get the number of children for "table_list"
 		int count = parsetree.getChildren().get(1).getChildren().size();
 		//System.out.println(parsetree.getChildren().get(1).getChildren().get(0).getSymbol());
 		for(int i = 0; i < count; i++){	
-			tables_for_cross.add(new ExpressionTree(parsetree.getChildren().get(1).getChildren().get(i).getSymbol()));
+			tables_for_cross.add(new ParseTree(parsetree.getChildren().get(1).getChildren().get(i).getSymbol()));
 		}
-		ExpressionTree cross = new ExpressionTree("cross",tables_for_cross,null);
+		ExpressionTree cross = new ExpressionTree("cross",null,tables_for_cross);
 
 		
 		int n = parsetree.getChildren().size();
