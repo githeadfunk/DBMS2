@@ -66,7 +66,7 @@ public class Implementation {
 	}
 	
 	public Relation cross(MainMemory mem, SchemaManager s, List<ParseTree> tables){
-		//System.out.println("enter cross");		 
+		System.out.println("enter cross");		 
 		int num = tables.size();
 		 if (num ==1){
 			 //--------only one table, just return the table
@@ -149,10 +149,10 @@ public class Implementation {
 					    for (int a =0; a< t1.getNumOfFields();a++){
 					    	//convert to proper fieldType 
 					    	if (field_types1.get(a).toString()=="INT"){
-					    		tuple.setField(a, Integer.parseInt(t1.getField(a).toString()) );
+					    		tuple.setField(a, t1.getField(a).integer );
 					    	}
 					    	else{
-					    		tuple.setField(a, t1.getField(a).toString());
+					    		tuple.setField(a, t1.getField(a).str);
 					    	}
 					    }
 					    // then append values from tuple2 to the new tuple
