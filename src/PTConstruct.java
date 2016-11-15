@@ -128,33 +128,16 @@ public class PTConstruct {
 			else{
 				searchindex = order_index;
 			}		
-			// zy: indicate the index of the last "AND", "OR"
+
 			int last =  where_index ; 		
-			// zy: when meet "AND" "OR" extract concessitive 3 elements as a tree of subcondition, "AND""OR" goes to condition tree
-			for(int i = where_index + 1; i < searchindex; i++){
-				if(valid1.contains(this.statement.get(i))){
-					List<ParseTree> subcondition = new ArrayList<ParseTree>(); 
-					for (int j = last+1; j < i; j++ ){					
-						subcondition.add(new ParseTree(this.statement.get(j)));
-						System.out.println("subcondtion:"+ this.statement.get(j));				
-					}
-					last = i;
-					ParseTree subcondition_list = new ParseTree("subcondition_list", subcondition);
-					conditions.add(subcondition_list);
-					conditions.add(new ParseTree(this.statement.get(i)));							
-				}
-			}	
-			// add the last subcondition after the last AND OR
-			List<ParseTree> subcondition = new ArrayList<ParseTree>(); 
-			for (int k = last+1; k< searchindex; k++){
-				subcondition.add(new ParseTree(this.statement.get(k)));
-				System.out.println("subcondtion:"+ this.statement.get(k));		
-			}
-			ParseTree subcondition_list = new ParseTree("subcondition_list", subcondition);
-			conditions.add(subcondition_list);
 			
-			// construct condition_list ParseTree, if 5 children, then 2 AND OR, 2 subcondition
+			for(int i = where_index + 1; i < searchindex; i++){
+				
+				conditions.add(new ParseTree(this.statement.get(i)));	
+				
+			}	
 			condition_list = new ParseTree("condition_list", conditions);
+			
 		}
 		
 		
