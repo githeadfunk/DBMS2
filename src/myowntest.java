@@ -118,7 +118,7 @@ public class myowntest {
 				    ExpressionTree e;
 				    e = et.construct();
 				    Implementation imp = new Implementation(e, mem, schema_manager);
-				    imp.select();
+				    imp.iterativeProcess(e,mem, schema_manager);
 			    }
 	    	}
 	    }
