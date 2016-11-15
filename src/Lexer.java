@@ -69,7 +69,7 @@ public class Lexer {
 
 	public static enum TokenType {
 		// Token types cannot have underscores
-		NUMBER("-?[0-9]+"), QUOTE("\\\"([a-zA-Z0-9 \']+)\\\""), WHITESPACE("[ \t\f\r\n]+"), ATTRIBUTENAME("[a-zA-Z][0-9a-zA-Z]*\\.[a-zA-Z][0-9a-zA-Z]*"), NAME("[a-zA-Z][A-Z0-9a-z]*"), BINARYOP("[*|/|+|-|,|.|;|(|)|[|]|<|>|=|\"]");
+		NUMBER("-?[0-9]+"), QUOTE("\\\"([a-zA-Z0-9 \']+)\\\""), WHITESPACE("[ \t\f\r\n]+"), ATTRIBUTENAME("[a-zA-Z][0-9a-zA-Z]*\\.[a-zA-Z][0-9a-zA-Z]*"), NAME("[a-zA-Z][A-Z0-9a-z]*"), BINARYOP("[*|/|+|-|,|.|(|)|[|]|<|>|=|\"]");
 
 		public final String pattern;
 
@@ -149,7 +149,7 @@ public class Lexer {
 			mylist.add(token.data);
 			//System.out.println(token);
 		}
-		System.out.println(mylist.size());
+		// System.out.println(mylist.size());
 		PTConstruct con = new PTConstruct(mylist);
 		ParseTree t;
 		t = con.construct();
