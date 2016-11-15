@@ -60,8 +60,48 @@ public class myowntest {
 		s.deleteRelation(t.symbol);
 	}
 	
-	public static void select(MainMemory mem, SchemaManager s,ParseTree t){
+	public static void select(MainMemory mem, SchemaManager s,ExpressionTree t){
+		//get tables,conditions and attributes from et
+		ArrayList<String> attributes = new ArrayList<String>();
+		ArrayList<String> conditions = new ArrayList<String>();
+		ArrayList<String> tables = new ArrayList<String>();
+		for(int i = 0; i < t.attribute.size(); i++){
+			attributes.add(t.attribute.get(i).symbol);
+			System.out.println(attributes.get(i));
+		}
+		for(int i = 0; i < t.children.get(0).attribute.get(0).children.size(); i++){
+			conditions.add(t.children.get(0).attribute.get(0).children.get(i).symbol);
+			System.out.println(conditions.get(i));
+		} 
+		for(int i = 0; i < t.children.get(0).children.get(0).children.size(); i++){
+			tables.add(t.children.get(0).children.get(0).children.get(0).symbol);
+			System.out.println(tables.get(i));
+		}
+		//process conditions
 		
+		//simple case, only one table
+		
+		if(t.children.get(0).children.get(0).children.size() == 1){
+			Relation r = s.getRelation(tables.get(0));
+			Block block;
+		    block=mem.getBlock(0);
+		    block.clear(); //clear the block
+		    for(int i = 0; i < r.getNumOfBlocks(); i++){
+			    r.getBlock(i, 0);
+			    for(int j = 0; j < mem.getBlock(0).getTuples().size(); j++){
+			    	if(apply_cons(mem.getBlock(0).getTuple(i), conditions)){
+			    		//
+			    	}
+				    //System.out.print(.toString()+"\n");
+			    }
+		    }
+			
+		}
+	}
+	
+	public static boolean apply_cons(Tuple tuple, ArrayList<String> cons){
+		//for()
+		return false;
 	}
 
 	
@@ -84,6 +124,7 @@ public class myowntest {
 	    Lexer lex = new Lexer(create);
 	    ParseTree cre_tree = lex.gettree();
 	    create(schema_manager, cre_tree);
+	    
 	    String insert = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\")";
 	    Lexer lex1 = new Lexer(insert);
 	    ParseTree ins_tree = lex1.gettree();
@@ -92,20 +133,21 @@ public class myowntest {
 	    String drop = "DROP TABLE course";
 	    Lexer lex2 = new Lexer(drop);
 	    ParseTree drop_tree = lex2.gettree();
-	    drop(schema_manager, drop_tree);
+	    //drop(schema_manager, drop_tree);
 	    
-		String select = "SELECT wyh,atm FROM c, course2";
-		Lexer lex3 = new Lexer(select);
+		//String select = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
+		String select = "select wyh from course where con.sid=1 AND con1 = 2;";
+	    Lexer lex3 = new Lexer(select);
 	    ParseTree sel_tree = lex3.gettree();
-	    select(mem, schema_manager, sel_tree);
+	    ETConstruct etc = new ETConstruct(sel_tree);
+	    ExpressionTree et = etc.select();
+	    select(mem, schema_manager, et);
 	    
-	    InputStreamReader r=new InputStreamReader(System.in);  
-	    BufferedReader br=new BufferedReader(r);  
-	      
+	    /* 
 	    System.out.println("Enter your name");  
 	    String name=br.readLine();  
 	    System.out.println("Welcome "+name);  
-	    /*
+	    
 		switch(tree.symbol){
 		case "create": create(schema_manager, tree);break;
 		case "insert": insert(mem, schema_manager, tree);break;
