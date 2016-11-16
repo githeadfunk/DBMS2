@@ -62,9 +62,9 @@ public class myowntest {
 	
 	public static void select(MainMemory mem, SchemaManager s,ExpressionTree t){
 		//get tables,conditions and attributes from et
-		ArrayList<String> attributes = new ArrayList<String>();
-		ArrayList<String> conditions = new ArrayList<String>();
-		ArrayList<String> tables = new ArrayList<String>();
+		List<String> attributes = new ArrayList<String>();
+		List<String> conditions = new ArrayList<String>();
+		List<String> tables = new ArrayList<String>();
 		for(int i = 0; i < t.attribute.size(); i++){
 			attributes.add(t.attribute.get(i).symbol);
 			System.out.println(attributes.get(i));
@@ -90,17 +90,78 @@ public class myowntest {
 			    r.getBlock(i, 0);
 			    for(int j = 0; j < mem.getBlock(0).getTuples().size(); j++){
 			    	if(apply_cons(mem.getBlock(0).getTuple(i), conditions)){
-			    		//
+			    		System.out.print("satisfied");
 			    	}
-				    //System.out.print(.toString()+"\n");
+			    	else{
+			    		System.out.print("not satisfied");
+			    	}
 			    }
 		    }
 			
 		}
 	}
 	
-	public static boolean apply_cons(Tuple tuple, ArrayList<String> cons){
-		//for()
+	public static boolean apply_cons(Tuple tuple, List<String> cons){
+		ArrayList<Integer> or = new ArrayList<Integer>();
+		boolean res;
+		for(int i = 0; i < cons.size(); i++){
+			if(cons.get(i).equals("or")){
+				or.add(i);
+			}
+		}
+		if(or.size() != 0){
+			int start = 0;
+			int end = 0;
+			res = false; 
+			for(int i = 0; i < or.size() + 1; i++){
+				if(i == or.size()){end = cons.size();}else{end = or.get(i);}
+				res = res | apply_cons(tuple, cons.subList(start, end));
+				if(i != or.size()){start = or.get(i) + 1;}
+			}
+			return res;
+		}
+		else{
+			ArrayList<Integer> and = new ArrayList<Integer>();
+			for(int i = 0; i < cons.size(); i++){
+				if(cons.get(i).equals("and")){
+					and.add(i);
+				}
+			}
+			if(and.size() != 0){
+				int start = 0;
+				int end = 0;
+				res = true;
+				for(int i = 0; i < and.size() + 1; i++){
+					if(i == and.size()){end = cons.size();}else{end = and.get(i);}
+					res = res & apply_cons(tuple, cons.subList(start, end));
+					if(i != and.size()){start = and.get(i) + 1;}
+				}
+				return res;
+			}
+			else{
+				//simple case, only attribute name;
+				Schema s = tuple.getSchema();
+				FieldType f = s.getFieldType(cons.get(0));
+				System.out.println(cons);
+				if(f.name() == "INT"){
+					int val = tuple.getField(cons.get(0)).integer;
+					switch(cons.get(1)){
+					case "=": if(val == Integer.valueOf(cons.get(2))){System.out.println(cons.get(2));return true;}else{System.out.println(cons.get(2));return false;}
+					case ">": if(val > Integer.valueOf(cons.get(2))){return true;}else{return false;}
+					case "<": if(val < Integer.valueOf(cons.get(2))){return true;}else{return false;}
+					}
+				}
+				else{
+					String val = String.valueOf(tuple.getField(cons.get(0)).str);
+					System.out.println(cons.get(2).substring(0,1));
+					if(cons.get(2).substring(0,1).equals("\"")){
+						System.out.println(cons.get(2).substring(1,cons.get(2).length()-1));
+						System.out.println(val);
+						if(val.equals(cons.get(2).substring(1,cons.get(2).length()-1))){return true;}else{return false;}
+					}
+				}
+			}
+		}
 		return false;
 	}
 
@@ -136,7 +197,7 @@ public class myowntest {
 	    //drop(schema_manager, drop_tree);
 	    
 		//String select = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
-		String select = "select wyh from course where con.sid=1 AND con1 = 2;";
+		String select = "select wyh from course where project = 200 or grade = \"E\'  f\";";
 	    Lexer lex3 = new Lexer(select);
 	    ParseTree sel_tree = lex3.gettree();
 	    ETConstruct etc = new ETConstruct(sel_tree);
