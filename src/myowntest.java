@@ -67,16 +67,21 @@ public class myowntest {
 		List<String> tables = new ArrayList<String>();
 		for(int i = 0; i < t.attribute.size(); i++){
 			attributes.add(t.attribute.get(i).symbol);
-			System.out.println(attributes.get(i));
+			//System.out.println(attributes.get(i));
 		}
 		for(int i = 0; i < t.children.get(0).attribute.get(0).children.size(); i++){
 			conditions.add(t.children.get(0).attribute.get(0).children.get(i).symbol);
-			System.out.println(conditions.get(i));
+			//System.out.println(conditions.get(i));
 		} 
 		for(int i = 0; i < t.children.get(0).children.get(0).children.size(); i++){
 			tables.add(t.children.get(0).children.get(0).children.get(0).symbol);
-			System.out.println(tables.get(i));
+			//System.out.println(tables.get(i));
 		}
+		String head = "";
+		for(int i = 0; i < attributes.size(); i++){
+			head = head + attributes.get(i) + "		";
+		}
+		System.out.println(head);
 		//process conditions
 		
 		//simple case, only one table
@@ -90,10 +95,11 @@ public class myowntest {
 			    r.getBlock(i, 0);
 			    for(int j = 0; j < mem.getBlock(0).getTuples().size(); j++){
 			    	if(apply_cons(mem.getBlock(0).getTuple(i), conditions)){
-			    		System.out.print("satisfied");
+			    		//System.out.print("satisfied");
+			    		projection(mem.getBlock(0).getTuple(i), attributes);
 			    	}
 			    	else{
-			    		System.out.print("not satisfied");
+			    		//System.out.print("not satisfied");
 			    	}
 			    }
 		    }
@@ -142,21 +148,21 @@ public class myowntest {
 				//simple case, only attribute name;
 				Schema s = tuple.getSchema();
 				FieldType f = s.getFieldType(cons.get(0));
-				System.out.println(cons);
+				//System.out.println(cons);
 				if(f.name() == "INT"){
 					int val = tuple.getField(cons.get(0)).integer;
 					switch(cons.get(1)){
-					case "=": if(val == Integer.valueOf(cons.get(2))){System.out.println(cons.get(2));return true;}else{System.out.println(cons.get(2));return false;}
+					case "=": if(val == Integer.valueOf(cons.get(2))){return true;}else{return false;}
 					case ">": if(val > Integer.valueOf(cons.get(2))){return true;}else{return false;}
 					case "<": if(val < Integer.valueOf(cons.get(2))){return true;}else{return false;}
 					}
 				}
 				else{
 					String val = String.valueOf(tuple.getField(cons.get(0)).str);
-					System.out.println(cons.get(2).substring(0,1));
+					//System.out.println(cons.get(2).substring(0,1));
 					if(cons.get(2).substring(0,1).equals("\"")){
-						System.out.println(cons.get(2).substring(1,cons.get(2).length()-1));
-						System.out.println(val);
+						//System.out.println(cons.get(2).substring(1,cons.get(2).length()-1));
+						//System.out.println(val);
 						if(val.equals(cons.get(2).substring(1,cons.get(2).length()-1))){return true;}else{return false;}
 					}
 				}
@@ -164,6 +170,15 @@ public class myowntest {
 		}
 		return false;
 	}
+	
+	public static void projection(Tuple tuple,List<String> attributes){
+		String out = "";
+		for(int i = 0; i < attributes.size(); i++){
+			out = out + tuple.getField(attributes.get(i)) + "		";
+		}
+		System.out.println(out);
+	}
+	
 
 	
 	public static void main(String[] args) throws IOException{
@@ -197,7 +212,7 @@ public class myowntest {
 	    //drop(schema_manager, drop_tree);
 	    
 		//String select = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
-		String select = "select wyh from course where project = 200 or grade = \"E\'  f\";";
+		String select = "select sid, homework, grade from course where project = 200 or grade = \"E\'  f\";";
 	    Lexer lex3 = new Lexer(select);
 	    ParseTree sel_tree = lex3.gettree();
 	    ETConstruct etc = new ETConstruct(sel_tree);
