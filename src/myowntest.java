@@ -26,7 +26,6 @@ public class myowntest {
 		//check relation exist
 		if(s.relationExists(t.children.get(0).symbol)){
 	    	Relation r = s.getRelation(t.children.get(0).symbol);
-	    	System.out.println("relation exists");
 	    	//check filed_types match, to be finished.......
 	    	List<ParseTree> names = t.children.get(1).children;
 	    	List<ParseTree> values = t.children.get(2).children;
@@ -48,6 +47,7 @@ public class myowntest {
 		    block_reference.clear(); //clear the block
 		    block_reference.appendTuple(tuple); // append the tuple
 		    r.setBlock(r.getNumOfBlocks(), 0);
+		    
 		    
 		}
 	    else{
@@ -190,7 +190,42 @@ public class myowntest {
 	    disk.resetDiskTimer();
 	    //--------------------
 	    
+	    File file = new File("H:/Courses/2016_Fall/Database/Project_2/Projects/my/src/test.txt");
+	    Scanner inputFile = new Scanner(file);
+	    if (!file.exists()){
+	    	System.err.println("File doesn't exists!");
+	    	System.exit(0);
+	    }
+	    else{
+	    	while (inputFile.hasNext()){
+	    		String statement = inputFile.nextLine();
+	    		Lexer lex = new Lexer(statement);
+			    ParseTree tree = lex.gettree();
+			    if (tree.symbol == "create"){
+			    	create(schema_manager, tree);
+			    }
+			    else if (tree.symbol ==  "insert"){
+			    	insert(mem, schema_manager, tree);
+			    }
+			    else if (tree.symbol == "drop"){
+			    	drop(schema_manager, tree);
+			    }
+			    else if (tree.symbol == "select"){
+			    	ETConstruct et = new ETConstruct(tree);
+				    ExpressionTree e;
+				    e = et.construct();
+				    //Implementation imp = new Implementation(e, mem, schema_manager);
+				    //imp.iterativeProcess(e,mem, schema_manager);
+			    }
+	    	}
+	    }
+	    inputFile.close();
+	    Relation r1 = schema_manager.getRelation("course");
+	    System.out.println(r1.toString());
+	    Relation r2 = schema_manager.getRelation("course2");
+	    System.out.println(r2.toString());
 	    
+	    /*
 	    //--------------------
 	    //String raw_statement = "DROP TABLE course";
 		//String raw_statement = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
@@ -219,7 +254,7 @@ public class myowntest {
 	    ExpressionTree et = etc.select();
 	    select(mem, schema_manager, et);
 	    
-	    /* 
+	    
 	    System.out.println("Enter your name");  
 	    String name=br.readLine();  
 	    System.out.println("Welcome "+name);  
