@@ -65,18 +65,44 @@ public class Implementation {
 		return r;
 	}
 	
-	public Relation cross(MainMemory mem, SchemaManager s, List<ParseTree> tables){
-		System.out.println("enter cross");		 
-		int num = tables.size();
+	public Relation select_cross(MainMemory mem, SchemaManager s, ExpressionTree t){
+		List<String> tablelist = new ArrayList<String>();
+		List<String> attributelist = new ArrayList<String>();
+		List<String> conditionlist = new ArrayList<String>();
+		for (int i =0; i< t.getAttribute().size(); i++){
+			attributelist.add(t.getAttribute().get(i).getSymbol());
+			
+		}
+		
+		if (t.getChildren().get(0).getSymbol() == "sigma"){
+			for (int i =0; i< t.getChildren().get(0).getAttribute().size(); i++){
+				conditionlist.add(t.getChildren().get(0).getAttribute().get(i).getSymbol());
+			}
+			for (int i =0; i< t.getChildren().get(0).getChildren().get(0).getAttribute().size(); i++){
+				tablelist.add(t.getChildren().get(0).getChildren().get(0).getAttribute().get(i).getSymbol());
+			}
+				
+		}
+		else{
+			for (int i =0; i< t.getChildren().get(0).getAttribute().size(); i++){
+				tablelist.add(t.getChildren().get(0).getAttribute().get(i).getSymbol());
+			}
+		}
+		System.out.println("table: "+tablelist);
+		System.out.println("attribute: "+attributelist);
+		System.out.println("condition : "+conditionlist);
+	
+			 
+		int num = tablelist.size();
 		 if (num ==1){
 			 //--------only one table, just return the table
-			 return s.getRelation(tables.get(0).getSymbol());
+			 return s.getRelation(tablelist.get(0));
 		 }
 		 else{	
 			 	//-------------cross for 2 tables----------------------
 			 	// get 2 tables
-			 	Relation table1 = s.getRelation(tables.get(0).getSymbol());
-			 	Relation table2 = s.getRelation(tables.get(1).getSymbol());
+			 	Relation table1 = s.getRelation(tablelist.get(0));
+			 	Relation table2 = s.getRelation(tablelist.get(1));
 			    // get  field name and type for each table
 			    System.out.print("Creating a schema" + "\n");
 			    ArrayList<String> field_names1= table1.getSchema().getFieldNames();
@@ -95,8 +121,8 @@ public class Implementation {
 
 			    		if (field_names1.get(i).equals(field_names2.get(j) )){
 			    			System.out.println("repeat");
-			    			field_names1.set(i,tables.get(0).getSymbol()+ "."+field_names1.get(i));
-			    			field_names2.set(j,tables.get(1).getSymbol()+ "."+field_names2.get(j));
+			    			field_names1.set(i,tablelist.get(0)+ "."+field_names1.get(i));
+			    			field_names2.set(j,tablelist.get(1)+ "."+field_names2.get(j));
 			    		}
 			    	}
 			    }
@@ -169,8 +195,8 @@ public class Implementation {
 					    
 					    // append new tuple to the crossed output relation
 					    appendTupleToRelation(relation_reference, mem, 5,tuple); 
-					    System.out.println("-----------for test--------");
-					    System.out.println(relation_reference);
+					    //System.out.println("-----------for test--------");
+					    //System.out.println(relation_reference);
 					    
 					    //break;
 					    
@@ -184,18 +210,5 @@ public class Implementation {
 	}
 	
 	//-----implement the logic query from buttom to the top------------------------
-	public Relation iterativeProcess(ExpressionTree t,MainMemory mem, SchemaManager s){
-		if (t.getChildren() == null){
-			return cross(mem, s, t.getAttribute());
-		}
-		else{
-			String symbol = t.getSymbol();
-			switch(symbol){
-			case "pi": { return pi(mem,s, iterativeProcess(t.getChildren().get(0), mem, s), t.getAttribute()); }
-			case "sigma": {return sigma(mem,s, iterativeProcess(t.getChildren().get(0), mem, s), t.getAttribute());}
-			default: return s.getRelation("empty");
-			}
-		}
-		
-	}
+	
 }
