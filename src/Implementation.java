@@ -65,7 +65,9 @@ public class Implementation {
 		return r;
 	}
 	
-	public Relation select_cross(MainMemory mem, SchemaManager s, ExpressionTree t){
+	public void select_cross(MainMemory mem, SchemaManager s, ExpressionTree t){
+		
+		//-----------extract lists of tables, attributes and conditions-------------
 		List<String> tablelist = new ArrayList<String>();
 		List<String> attributelist = new ArrayList<String>();
 		List<String> conditionlist = new ArrayList<String>();
@@ -92,11 +94,24 @@ public class Implementation {
 		System.out.println("attribute: "+attributelist);
 		System.out.println("condition : "+conditionlist);
 	
-			 
+		//-----------carry out cross process, nested with con_apply and pi function to get final result 
 		int num = tablelist.size();
 		 if (num ==1){
 			 //--------only one table, just return the table
-			 return s.getRelation(tablelist.get(0));
+			 //return s.getRelation(tablelist.get(0));
+			 Relation table = s.getRelation(tablelist.get(0));
+			 
+			 Block block_reference=mem.getBlock(0); //access to memory block 0
+			 block_reference.clear();
+			 for (int i = 0; i < table.getNumOfBlocks();i++){
+			    	
+				    // read block i of talbe1 into memory block 0
+				    table.getBlock(i, 0);
+				    block_reference=mem.getBlock(0);
+				    Tuple tuple = block_reference.getTuple(0);
+				    
+				    
+			 }
 		 }
 		 else{	
 			 	//-------------cross for 2 tables----------------------
@@ -194,7 +209,7 @@ public class Implementation {
 					    }
 					    
 					    // append new tuple to the crossed output relation
-					    appendTupleToRelation(relation_reference, mem, 5,tuple); 
+					    //appendTupleToRelation(relation_reference, mem, 5,tuple); 
 					    //System.out.println("-----------for test--------");
 					    //System.out.println(relation_reference);
 					    
@@ -204,7 +219,7 @@ public class Implementation {
 			    	}
 			    	//break;
 			    }    
-			    return relation_reference;
+			    
 			 
 		 }
 	}
