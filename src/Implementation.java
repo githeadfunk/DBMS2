@@ -47,23 +47,79 @@ public class Implementation {
 	  }
 	
 	
-	//--------seperate implementation: pi, sigma, union------
-	public Relation pi(MainMemory mem, SchemaManager s, Relation r, List<ParseTree> attributes){
-		System.out.println("enter pi");
-		System.out.println(r);
-		
-		System.out.print(mem + "\n" + "\n");
-		// used for output
-		//System.out.print(block_reference.getTuple(0)）；
-		//ArrayList<Tuple> tuples=block_reference.getTuples();
-		//for (int i=0;i<tuples.size();i++)
-		//    System.out.print(tuples.get(i).toString()+"\n");
-		return r;
+	//--------separate implementation: projection, apply_con functions------
+	public static boolean apply_cons(Tuple tuple, List<String> cons){
+		ArrayList<Integer> or = new ArrayList<Integer>();
+		boolean res;
+		for(int i = 0; i < cons.size(); i++){
+			if(cons.get(i).equals("or")){
+				or.add(i);
+			}
+		}
+		if(or.size() != 0){
+			int start = 0;
+			int end = 0;
+			res = false; 
+			for(int i = 0; i < or.size() + 1; i++){
+				if(i == or.size()){end = cons.size();}else{end = or.get(i);}
+				res = res | apply_cons(tuple, cons.subList(start, end));
+				if(i != or.size()){start = or.get(i) + 1;}
+			}
+			return res;
+		}
+		else{
+			ArrayList<Integer> and = new ArrayList<Integer>();
+			for(int i = 0; i < cons.size(); i++){
+				if(cons.get(i).equals("and")){
+					and.add(i);
+				}
+			}
+			if(and.size() != 0){
+				int start = 0;
+				int end = 0;
+				res = true;
+				for(int i = 0; i < and.size() + 1; i++){
+					if(i == and.size()){end = cons.size();}else{end = and.get(i);}
+					res = res & apply_cons(tuple, cons.subList(start, end));
+					if(i != and.size()){start = and.get(i) + 1;}
+				}
+				return res;
+			}
+			else{
+				//simple case, only attribute name;
+				Schema s = tuple.getSchema();
+				FieldType f = s.getFieldType(cons.get(0));
+				//System.out.println(cons);
+				if(f.name() == "INT"){
+					int val = tuple.getField(cons.get(0)).integer;
+					switch(cons.get(1)){
+					case "=": if(val == Integer.valueOf(cons.get(2))){return true;}else{return false;}
+					case ">": if(val > Integer.valueOf(cons.get(2))){return true;}else{return false;}
+					case "<": if(val < Integer.valueOf(cons.get(2))){return true;}else{return false;}
+					}
+				}
+				else{
+					String val = String.valueOf(tuple.getField(cons.get(0)).str);
+					//System.out.println(cons.get(2).substring(0,1));
+					if(cons.get(2).substring(0,1).equals("\"")){
+						//System.out.println(cons.get(2).substring(1,cons.get(2).length()-1));
+						//System.out.println(val);
+						if(val.equals(cons.get(2).substring(1,cons.get(2).length()-1))){return true;}else{return false;}
+					}
+				}
+			}
+		}
+		return false;
 	}
 	
-	public Relation sigma(MainMemory mem, SchemaManager s, Relation r, List<ParseTree> attributes){
-		return r;
+	public static void projection(Tuple tuple,List<String> attributes){
+		String out = "";
+		for(int i = 0; i < attributes.size(); i++){
+			out = out + tuple.getField(attributes.get(i)) + "		";
+		}
+		System.out.println(out);
 	}
+	
 	
 	public void select_cross(MainMemory mem, SchemaManager s, ExpressionTree t){
 		
@@ -109,6 +165,9 @@ public class Implementation {
 				    table.getBlock(i, 0);
 				    block_reference=mem.getBlock(0);
 				    Tuple tuple = block_reference.getTuple(0);
+				    if (apply_cons(tuple,conditionlist)){
+				    	projection(tuple,attributelist);
+				    }
 				    
 				    
 			 }
@@ -213,6 +272,11 @@ public class Implementation {
 					    //System.out.println("-----------for test--------");
 					    //System.out.println(relation_reference);
 					    
+					    
+					    // apply sigma and pi
+					    if (apply_cons(tuple,conditionlist)){
+					    	projection(tuple,attributelist);
+					    }
 					    //break;
 					    
 					    
