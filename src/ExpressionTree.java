@@ -19,7 +19,7 @@ public class ExpressionTree implements Iterable<ExpressionTree> {
      * @param children The children of this parse tree node.
      */
     public ExpressionTree(String symbol, List<ExpressionTree> children, List<ParseTree> attribute) {
-        if (symbol == null || children == null )
+        if (symbol == null && children == null )
             throw new NullPointerException();
 
         this.symbol = symbol;

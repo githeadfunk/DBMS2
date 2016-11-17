@@ -21,18 +21,23 @@ public class myowntest {
 	    Schema schema=new Schema(field_names,field_types);
 	    String relation_name = t.children.get(0).symbol;
 	    Relation relation_reference=s.createRelation(relation_name,schema);
+	    //------print relation-------
+	    //System.out.print("After Create table the relation contains: " + "\n");
+	   // System.out.print(relation_reference + "\n" + "\n");
 	}
 	public static void insert(MainMemory mem, SchemaManager s,ParseTree t){
 		//check relation exist
 		if(s.relationExists(t.children.get(0).symbol)){
 	    	Relation r = s.getRelation(t.children.get(0).symbol);
 	    	//check filed_types match, to be finished.......
+	    	//System.out.println("relation exists");
+	    	//create a tuple
+	    	Tuple tuple = r.createTuple();
 	    	List<ParseTree> names = t.children.get(1).children;
 	    	List<ParseTree> values = t.children.get(2).children;
 		    ArrayList<String> field_names = r.getSchema().getFieldNames();
 		    ArrayList<FieldType> field_types = r.getSchema().getFieldTypes();
 		    //create tuple
-	    	Tuple tuple = r.createTuple();
 		    for(int i = 0; i < t.children.get(1).children.size(); i ++ ){
 	    		if(field_types.get(i).equals(FieldType.INT)){
 		    		tuple.setField(names.get(i).symbol, Integer.parseInt(values.get(i).symbol));
@@ -264,6 +269,59 @@ public class myowntest {
 		case "insert": insert(mem, schema_manager, tree);break;
 		case "drop": drop(schema_manager, tree);break;
 		}
+	    //String raw_statement = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
+	    
+	    //System.out.print("Starting, the memory contains: " + "\n");
+	    //System.out.print(mem + "\n");
+
+	    //System.out.print("Starting, Current schemas and relations: " + "\n");
+	    //System.out.print(schema_manager + "\n");
+	    
+	    
+	    File file = new File("/Users/zy/Desktop/Course/CSCE608_Database/Project2/DBMS2/src/test.txt");
+	    Scanner inputFile = new Scanner(file);
+	    if (!file.exists()){
+	    	System.err.println("File doesn't exists!");
+	    	System.exit(0);
+	    }
+	    else{
+	    	while (inputFile.hasNext()){
+	    		String statement = inputFile.nextLine();
+	    		Lexer lex = new Lexer(statement);
+			    ParseTree tree = lex.gettree();
+			    if (tree.symbol == "create"){
+			    	create(schema_manager, tree);
+			    }
+			    else if (tree.symbol ==  "insert"){
+			    	insert(mem, schema_manager, tree);
+			    }
+			    else if (tree.symbol == "drop"){
+			    	drop(schema_manager, tree);
+			    }
+			    else if (tree.symbol == "select"){
+			    	ETConstruct et = new ETConstruct(tree);
+				    ExpressionTree e;
+				    e = et.construct();
+				    Implementation imp = new Implementation(e, mem, schema_manager);
+				    imp.select_cross(mem, schema_manager,e);
+			    }
+	    	}
+	    }
+	    inputFile.close();
+	    
+	    
+		
+		
+	   System.out.print("After, the memory contains: " + "\n");
+	    //System.out.print(mem + "\n");
+
+	    //System.out.print("After, Current schemas and relations: " + "\n");
+	    //System.out.print(schema_manager + "\n");
+		
+		
+	   
+		 //------select test-------
+		
 		*/
 	}
 }
