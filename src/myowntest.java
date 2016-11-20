@@ -26,32 +26,48 @@ public class myowntest {
 	   // System.out.print(relation_reference + "\n" + "\n");
 	}
 	public static void insert(MainMemory mem, SchemaManager s,ParseTree t){
+		//check relation exist
 		if(s.relationExists(t.children.get(0).symbol)){
 	    	Relation r = s.getRelation(t.children.get(0).symbol);
+	    	//check filed_types match, to be finished.......
 	    	//System.out.println("relation exists");
 	    	//create a tuple
 	    	Tuple tuple = r.createTuple();
 	    	List<ParseTree> names = t.children.get(1).children;
 	    	List<ParseTree> values = t.children.get(2).children;
-		    Schema sche = r.getSchema();
-		    ArrayList<FieldType> field_type = sche.getFieldTypes();
+		    ArrayList<String> field_names = r.getSchema().getFieldNames();
+		    ArrayList<FieldType> field_types = r.getSchema().getFieldTypes();
+		    //create tuple
 		    for(int i = 0; i < t.children.get(1).children.size(); i ++ ){
-	    		if(field_type.get(i).equals(FieldType.INT)){
+	    		if(field_types.get(i).equals(FieldType.INT)){
 		    		tuple.setField(names.get(i).symbol, Integer.parseInt(values.get(i).symbol));
 	    		}
 	    		else{
-		    		tuple.setField(names.get(i).symbol, values.get(i).symbol);
+		    		tuple.setField(names.get(i).symbol, values.get(i).symbol.substring(1, values.get(i).symbol.length()-1));
 	    		}
 	    	}
-		    Block block_reference;
-		    block_reference=mem.getBlock(0);
-		    block_reference.clear(); //clear the block
-		    block_reference.appendTuple(tuple); // append the tuple
-		    r.setBlock(r.getNumOfBlocks(), 0);
+		    //insert tuple
+		    Block mem_block;
+		    mem_block = mem.getBlock(0);
+		    mem_block.clear(); //clear the block
+		    if(r.getNumOfBlocks() == 0){
+			    mem_block.appendTuple(tuple); // append the tuple
+		    	r.setBlock(r.getNumOfBlocks(), 0);
+		    }
+		    else{
+		    	r.getBlock(r.getNumOfBlocks()-1, 0);
+		    	mem_block = mem.getBlock(0);
+		    	if(mem_block.isFull()){
+		    		mem_block.clear();
+		    		mem_block.appendTuple(tuple); // append the tuple
+			    	r.setBlock(r.getNumOfBlocks(), 0);
+		    	}
+		    	else{
+		    		mem_block.appendTuple(tuple); // append the tuple
+			    	r.setBlock(r.getNumOfBlocks()-1, 0);
+		    	}
+		    }
 		    
-		    //------print relation-------
-		    //System.out.print("After insertion the relation contains: " + "\n");
-		   // System.out.print(r + "\n" + "\n");
 		    
 		}
 	    else{
