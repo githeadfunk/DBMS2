@@ -47,11 +47,26 @@ public class myowntest {
 	    		}
 	    	}
 		    //insert tuple
-		    Block block_reference;
-		    block_reference=mem.getBlock(0);
-		    block_reference.clear(); //clear the block
-		    block_reference.appendTuple(tuple); // append the tuple
-		    r.setBlock(r.getNumOfBlocks(), 0);
+		    Block mem_block;
+		    mem_block = mem.getBlock(0);
+		    mem_block.clear(); //clear the block
+		    if(r.getNumOfBlocks() == 0){
+			    mem_block.appendTuple(tuple); // append the tuple
+		    	r.setBlock(r.getNumOfBlocks(), 0);
+		    }
+		    else{
+		    	r.getBlock(r.getNumOfBlocks()-1, 0);
+		    	mem_block = mem.getBlock(0);
+		    	if(mem_block.isFull()){
+		    		mem_block.clear();
+		    		mem_block.appendTuple(tuple); // append the tuple
+			    	r.setBlock(r.getNumOfBlocks(), 0);
+		    	}
+		    	else{
+		    		mem_block.appendTuple(tuple); // append the tuple
+			    	r.setBlock(r.getNumOfBlocks()-1, 0);
+		    	}
+		    }
 		    
 		    
 		}
@@ -150,16 +165,25 @@ public class myowntest {
 				return res;
 			}
 			else{
-				//simple case, only attribute name;
 				Schema s = tuple.getSchema();
 				FieldType f = s.getFieldType(cons.get(0));
-				//System.out.println(cons);
+				ArrayList<String> fields = tuple.getSchema().getFieldNames();
+				int val2 = 0;
+				for(int i = 0; i < fields.size(); i++){
+					if(fields.get(0).equals(cons.get(2))){
+						val2 = tuple.getField(cons.get(2)).integer;
+						break;
+					}
+					else{
+						val2 = Integer.valueOf(cons.get(2));
+					}
+				}
 				if(f.name() == "INT"){
-					int val = tuple.getField(cons.get(0)).integer;
+					int val1 = tuple.getField(cons.get(0)).integer;
 					switch(cons.get(1)){
-					case "=": if(val == Integer.valueOf(cons.get(2))){return true;}else{return false;}
-					case ">": if(val > Integer.valueOf(cons.get(2))){return true;}else{return false;}
-					case "<": if(val < Integer.valueOf(cons.get(2))){return true;}else{return false;}
+					case "=": if(val1 == val2){return true;}else{return false;}
+					case ">": if(val1 > val2){return true;}else{return false;}
+					case "<": if(val1 < val2){return true;}else{return false;}
 					}
 				}
 				else{
@@ -216,11 +240,13 @@ public class myowntest {
 			    	drop(schema_manager, tree);
 			    }
 			    else if (tree.symbol == "select"){
+			    	
 			    	ETConstruct et = new ETConstruct(tree);
 				    ExpressionTree e;
 				    e = et.construct();
-				    //Implementation imp = new Implementation(e, mem, schema_manager);
-				    //imp.iterativeProcess(e,mem, schema_manager);
+				    Implementation imp = new Implementation(e, mem, schema_manager);
+				    imp.select_cross(mem, schema_manager, e);
+				    
 			    }
 	    	}
 	    }
@@ -229,99 +255,5 @@ public class myowntest {
 	    System.out.println(r1.toString());
 	    Relation r2 = schema_manager.getRelation("course2");
 	    System.out.println(r2.toString());
-	    
-	    /*
-	    //--------------------
-	    //String raw_statement = "DROP TABLE course";
-		//String raw_statement = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
-	    //String raw_statement = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\")";
-		//String raw_statement = "INSERT INTO course VALUES (\"2 d d\", 0, 100, 100, \"E\'  f\")";
-	    String create = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
-	    Lexer lex = new Lexer(create);
-	    ParseTree cre_tree = lex.gettree();
-	    create(schema_manager, cre_tree);
-	    
-	    String insert = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\")";
-	    Lexer lex1 = new Lexer(insert);
-	    ParseTree ins_tree = lex1.gettree();
-	    insert(mem, schema_manager, ins_tree);
-	    
-	    String drop = "DROP TABLE course";
-	    Lexer lex2 = new Lexer(drop);
-	    ParseTree drop_tree = lex2.gettree();
-	    //drop(schema_manager, drop_tree);
-	    
-		//String select = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
-		String select = "select sid, homework, grade from course where project = 200 or grade = \"E\'  f\";";
-	    Lexer lex3 = new Lexer(select);
-	    ParseTree sel_tree = lex3.gettree();
-	    ETConstruct etc = new ETConstruct(sel_tree);
-	    ExpressionTree et = etc.select();
-	    select(mem, schema_manager, et);
-	    
-	    
-	    System.out.println("Enter your name");  
-	    String name=br.readLine();  
-	    System.out.println("Welcome "+name);  
-	    
-		switch(tree.symbol){
-		case "create": create(schema_manager, tree);break;
-		case "insert": insert(mem, schema_manager, tree);break;
-		case "drop": drop(schema_manager, tree);break;
-		}
-	    //String raw_statement = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
-	    
-	    //System.out.print("Starting, the memory contains: " + "\n");
-	    //System.out.print(mem + "\n");
-
-	    //System.out.print("Starting, Current schemas and relations: " + "\n");
-	    //System.out.print(schema_manager + "\n");
-	    
-	    
-	    File file = new File("/Users/zy/Desktop/Course/CSCE608_Database/Project2/DBMS2/src/test.txt");
-	    Scanner inputFile = new Scanner(file);
-	    if (!file.exists()){
-	    	System.err.println("File doesn't exists!");
-	    	System.exit(0);
-	    }
-	    else{
-	    	while (inputFile.hasNext()){
-	    		String statement = inputFile.nextLine();
-	    		Lexer lex = new Lexer(statement);
-			    ParseTree tree = lex.gettree();
-			    if (tree.symbol == "create"){
-			    	create(schema_manager, tree);
-			    }
-			    else if (tree.symbol ==  "insert"){
-			    	insert(mem, schema_manager, tree);
-			    }
-			    else if (tree.symbol == "drop"){
-			    	drop(schema_manager, tree);
-			    }
-			    else if (tree.symbol == "select"){
-			    	ETConstruct et = new ETConstruct(tree);
-				    ExpressionTree e;
-				    e = et.construct();
-				    Implementation imp = new Implementation(e, mem, schema_manager);
-				    imp.select_cross(mem, schema_manager,e);
-			    }
-	    	}
-	    }
-	    inputFile.close();
-	    
-	    
-		
-		
-	   System.out.print("After, the memory contains: " + "\n");
-	    //System.out.print(mem + "\n");
-
-	    //System.out.print("After, Current schemas and relations: " + "\n");
-	    //System.out.print(schema_manager + "\n");
-		
-		
-	   
-		 //------select test-------
-		
-		*/
 	}
 }

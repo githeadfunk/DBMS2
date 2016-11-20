@@ -86,20 +86,39 @@ public class Implementation {
 				return res;
 			}
 			else{
-				//simple case, only attribute name;
 				Schema s = tuple.getSchema();
 				FieldType f = s.getFieldType(cons.get(0));
-				//System.out.println(cons);
+				ArrayList<String> fields = tuple.getSchema().getFieldNames();
 				if(f.name() == "INT"){
-					int val = tuple.getField(cons.get(0)).integer;
+					int val1 = tuple.getField(cons.get(0)).integer;
+					int val2 = 0;
+					for(int i = 0; i < fields.size(); i++){
+						if(fields.get(i).equals(cons.get(2))){
+							val2 = tuple.getField(cons.get(2)).integer;
+							break;
+						}
+						if(i == fields.size()-1){
+							val2 = Integer.valueOf(cons.get(2));
+						}
+					}
 					switch(cons.get(1)){
-					case "=": if(val == Integer.valueOf(cons.get(2))){return true;}else{return false;}
-					case ">": if(val > Integer.valueOf(cons.get(2))){return true;}else{return false;}
-					case "<": if(val < Integer.valueOf(cons.get(2))){return true;}else{return false;}
+					case "=": if(val1 == val2){return true;}else{return false;}
+					case ">": if(val1 > val2){return true;}else{return false;}
+					case "<": if(val1 < val2){return true;}else{return false;}
 					}
 				}
 				else{
 					String val = String.valueOf(tuple.getField(cons.get(0)).str);
+					String val2 = "";
+					for(int i = 0; i < fields.size(); i++){
+						if(fields.get(i).equals(cons.get(2))){
+							val2 = tuple.getField(cons.get(2)).str;
+							break;
+						}
+						if(i == fields.size()-1){
+							val2 = cons.get(2);
+						}
+					}
 					//System.out.println(cons.get(2).substring(0,1));
 					if(cons.get(2).substring(0,1).equals("\"")){
 						//System.out.println(cons.get(2).substring(1,cons.get(2).length()-1));
@@ -114,7 +133,10 @@ public class Implementation {
 	
 	public static void projection(Tuple tuple,List<String> attributes){
 		String out = "";
+		System.out.println(tuple.toString());
 		for(int i = 0; i < attributes.size(); i++){
+			System.out.println(attributes.get(i));
+			System.out.println(tuple.getField(attributes.get(i)));
 			out = out + tuple.getField(attributes.get(i)) + "		";
 		}
 		System.out.println(out);
