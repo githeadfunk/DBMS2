@@ -14,4 +14,4 @@ INSERT INTO course2 (sid, exam, grade) VALUES (5, 66, "A")
 INSERT INTO course2 (sid, exam, grade) VALUES (6, 65, "B")
 INSERT INTO course2 (sid, exam, grade) VALUES (18, 0, "A")
 INSERT INTO course2 (sid, exam, grade) VALUES (18, 0, "A")
-SELECT course.grade, course2.grade FROM course, course2 WHERE course.sid = course2.sid
+SELECT course.grade, course2.grade FROM course, course2 WHERE course.grade = course2.grade

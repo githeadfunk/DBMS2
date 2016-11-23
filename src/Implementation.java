@@ -119,12 +119,7 @@ public class Implementation {
 							val2 = cons.get(2);
 						}
 					}
-					//System.out.println(cons.get(2).substring(0,1));
-					if(cons.get(2).substring(0,1).equals("\"")){
-						//System.out.println(cons.get(2).substring(1,cons.get(2).length()-1));
-						//System.out.println(val);
-						if(val.equals(cons.get(2).substring(1,cons.get(2).length()-1))){return true;}else{return false;}
-					}
+					if(val.equals(val2)){return true;}else{return false;}
 				}
 			}
 		}
@@ -133,10 +128,7 @@ public class Implementation {
 	
 	public static void projection(Tuple tuple,List<String> attributes){
 		String out = "";
-		System.out.println(tuple.toString());
 		for(int i = 0; i < attributes.size(); i++){
-			System.out.println(attributes.get(i));
-			System.out.println(tuple.getField(attributes.get(i)));
 			out = out + tuple.getField(attributes.get(i)) + "		";
 		}
 		System.out.println(out);
