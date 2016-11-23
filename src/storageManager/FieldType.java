@@ -7,3 +7,4 @@ package storageManager;
 public enum FieldType {
 	INT, STR20
 }
+

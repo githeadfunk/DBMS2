@@ -290,18 +290,15 @@ public class Implementation {
 					    // apply sigma and pi
 					    if (apply_cons(tuple,conditionlist)){
 					    	projection(tuple,attributelist);
-					    }
-					    //break;
-					    
-					    
+					    }    
 			    	}
-			    	//break;
-			    }    
-			    
-			 
+			    }    	 
 		 }
 	}
 	
-	//-----implement the logic query from buttom to the top------------------------
+
+		
+	
+
 	
 }
