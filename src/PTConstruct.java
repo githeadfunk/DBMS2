@@ -72,7 +72,7 @@ public class PTConstruct {
 	
 	public ParseTree select(){
 		int count = 0;
-		int from_index = 0, where_index = 0, order_index = 0;
+		int from_index = 0, where_index = 0, order_index = 0, distinct_flag = 0, order_flag = 0;
 		for(String s : this.statement){
 	    	if(s.toLowerCase().equals("from")){
 	    		from_index = count;
@@ -82,6 +82,12 @@ public class PTConstruct {
 	    	}
 	    	if(s.toLowerCase().equals("order")){
 	    		order_index = count;
+	    	}
+	    	if(s.toLowerCase().equals("distinct")){
+	    		distinct_flag = 1;
+	    	}
+	    	if(s.toLowerCase().equals("order")){
+	    		order_flag = 1;
 	    	}
 	    	count += 1;
 	    }
@@ -140,6 +146,9 @@ public class PTConstruct {
 			
 		}
 		
+		//construct distinct tree
+		ParseTree distinc_tree = new ParseTree("distinct");
+		
 		
 		//construct whole ParseTree
 		List<ParseTree> root_list = new ArrayList<ParseTree>();
@@ -148,11 +157,13 @@ public class PTConstruct {
 			root_list.add(attri_list);
 			root_list.add(table_list);
 			root_list.add(condition_list);
+			root_list.add(distinc_tree);
             root = new ParseTree("select", root_list);
 		}
 		else{
 			root_list.add(attri_list);
 			root_list.add(table_list);
+			root_list.add(distinc_tree);
 			root = new ParseTree("select", root_list);
 		}
 		return root;
