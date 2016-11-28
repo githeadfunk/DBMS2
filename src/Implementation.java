@@ -164,10 +164,16 @@ public class Implementation {
 				    // read block i of talbe1 into memory block 0
 				    table.getBlock(i, 0);
 				    block_reference=mem.getBlock(0);
-				    Tuple tuple = block_reference.getTuple(0);
-				    if (apply_cons(tuple,conditionlist)){
-				    	projection(tuple,attributelist);
+				    
+				    // read all the tuples in memory block 0
+				    int tuple_num = table.getSchema().getTuplesPerBlock();
+				    for (int j = 0; j< tuple_num; j++){
+				    	  Tuple tuple = block_reference.getTuple(j);
+						    if (apply_cons(tuple,conditionlist)){
+						    	projection(tuple,attributelist);
+						    }
 				    }
+				  
 				    
 				    
 			 }
@@ -237,46 +243,55 @@ public class Implementation {
 					    block_reference1=mem.getBlock(1);
 					    //System.out.println(block_reference.getTuple(0)+"<<<<<<<"); 
 					    
-					    //get 2 tuples from each table from memory
-					    Tuple t1 = block_reference.getTuple(0);
-					    Tuple t2 = block_reference1.getTuple(0);
+					    //get how many tuples exist in a block for table 1 and table2
+					    int num_tuple = table1.getSchema().getTuplesPerBlock();
+					    int num_tuple1 = table2.getSchema().getTuplesPerBlock();
 					    
-					    
-					    // create crossed new tuple
-					    Tuple tuple = relation_reference.createTuple();
-					    
-					    // first append values from tuple1 to the new tuple
-					    for (int a =0; a< t1.getNumOfFields();a++){
-					    	//convert to proper fieldType 
-					    	if (field_types1.get(a).toString()=="INT"){
-					    		tuple.setField(a, t1.getField(a).integer );
-					    	}
-					    	else{
-					    		tuple.setField(a, t1.getField(a).str);
+					    for (int m = 0; m< num_tuple; m++){
+					    	for(int n =0; n < num_tuple1; n++){
+					    		// cross each tuple from one table with tuples in the other table
+					    		Tuple t1 = block_reference.getTuple(m);
+							    Tuple t2 = block_reference1.getTuple(n);
+							    
+							    
+							    // create crossed new tuple
+							    Tuple tuple = relation_reference.createTuple();
+							    
+							    // first append values from tuple1 to the new tuple
+							    for (int a =0; a< t1.getNumOfFields();a++){
+							    	//convert to proper fieldType 
+							    	if (field_types1.get(a).toString()=="INT"){
+							    		tuple.setField(a, t1.getField(a).integer );
+							    	}
+							    	else{
+							    		tuple.setField(a, t1.getField(a).str);
+							    	}
+							    }
+							    // then append values from tuple2 to the new tuple
+							    for (int a =0; a< t2.getNumOfFields();a++){
+							    	//System.out.println("getfield"+t2.getField(a));
+							    	//convert to proper fieldType 
+							    	if (field_types2.get(a).toString()=="INT"){
+							    		tuple.setField(a+t1.getNumOfFields(), Integer.parseInt(t2.getField(a).toString()));
+							    	}
+							    	else{
+							    		tuple.setField(a+t1.getNumOfFields(), t2.getField(a).toString());
+							    	}
+							    }
+							    
+							    // append new tuple to the crossed output relation
+							    //appendTupleToRelation(relation_reference, mem, 5,tuple); 
+							    //System.out.println("-----------for test--------");
+							    //System.out.println(relation_reference);
+							    
+							    
+							    // apply sigma and pi
+							    if (apply_cons(tuple,conditionlist)){
+							    	projection(tuple,attributelist);
+							    }    
 					    	}
 					    }
-					    // then append values from tuple2 to the new tuple
-					    for (int a =0; a< t2.getNumOfFields();a++){
-					    	//System.out.println("getfield"+t2.getField(a));
-					    	//convert to proper fieldType 
-					    	if (field_types2.get(a).toString()=="INT"){
-					    		tuple.setField(a+t1.getNumOfFields(), Integer.parseInt(t2.getField(a).toString()));
-					    	}
-					    	else{
-					    		tuple.setField(a+t1.getNumOfFields(), t2.getField(a).toString());
-					    	}
-					    }
 					    
-					    // append new tuple to the crossed output relation
-					    //appendTupleToRelation(relation_reference, mem, 5,tuple); 
-					    //System.out.println("-----------for test--------");
-					    //System.out.println(relation_reference);
-					    
-					    
-					    // apply sigma and pi
-					    if (apply_cons(tuple,conditionlist)){
-					    	projection(tuple,attributelist);
-					    }    
 			    	}
 			    }    	 
 		 }
