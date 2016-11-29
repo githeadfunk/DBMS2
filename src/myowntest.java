@@ -506,7 +506,7 @@ public class myowntest {
 		disk.resetDiskIOs();
 	    disk.resetDiskTimer();
 	    //--------------------
-	    
+	    /*
 	    File file = new File("H:/Courses/2016_Fall/Database/Project_2/Projects/my/src/test.txt");
 	    Scanner inputFile = new Scanner(file);
 	    if (!file.exists()){
@@ -560,6 +560,23 @@ public class myowntest {
 		
 	   
 		 //------select test-------
+		
+		String s = "SELECT DISTINCT course.grade, course2.grade FROM course, course2 WHERE course.sid = course2.sid AND course.grade = \"A\" AND course2.grade = \"A\" ORDER BY course.exam";
+		Lexer l = new Lexer(s);
+		ParseTree t = l.gettree();
+		*/
+	    String s = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
+	    Lexer l = new Lexer(s);
+		ParseTree t = l.gettree();
+		create(schema_manager, t);
+
+
+		//r.getSchema().addcolumn("distinct", FieldType.valueOf("INT"));
+		String s1 = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (1, 99, 100, 100, \"A\")";
+		Lexer l1 = new Lexer(s1);
+		ParseTree t1 = l1.gettree();
+		insert(mem, schema_manager, t1);
+		
 		
 		
 	}

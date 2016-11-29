@@ -96,20 +96,32 @@ public class PTConstruct {
 		
 		// zy: avoid disruption of ",", "(", ")"
 		List valid = Arrays.asList(",", "(", ")");
-		for(int i = 1; i < from_index; i++){
-			if(!valid.contains(this.statement.get(i))){
-				attributes.add(new ParseTree(this.statement.get(i)));
-				//System.out.println("arraylist element:"+this.statement.get(i));
+		if(distinct_flag == 0){
+			for(int i = 1; i < from_index; i++){
+				if(!valid.contains(this.statement.get(i))){
+					attributes.add(new ParseTree(this.statement.get(i)));
+				}
 			}
 		}
+		else{
+			for(int i = 2; i < from_index; i++){
+				if(!valid.contains(this.statement.get(i))){
+					attributes.add(new ParseTree(this.statement.get(i)));
+				}
+			}
+		}
+		
 		
 		ParseTree attri_list = new ParseTree("attri_list", attributes);
 		
 		//construct tables list
 		List<ParseTree> tables = new ArrayList<ParseTree>();
 		int end_index = 0;
-		if (where_index == 0){
+		if (where_index == 0 && order_flag == 0){
 			end_index = this.statement.size();
+		}
+		else if(where_index == 0 && order_flag == 1){
+			end_index = order_index;
 		}
 		else{
 			end_index = where_index;
@@ -146,24 +158,26 @@ public class PTConstruct {
 			
 		}
 		
-		//construct distinct tree
-		ParseTree distinc_tree = new ParseTree("distinct");
-		
+		//construct order tree
+		List<ParseTree> order = new ArrayList<ParseTree>();
+		order.add(new ParseTree(this.statement.get(order_index + 2)));
+		ParseTree order_tree = new ParseTree("order", order);
 		
 		//construct whole ParseTree
 		List<ParseTree> root_list = new ArrayList<ParseTree>();
 		ParseTree root = new ParseTree("null");
-		if (where_index !=0){
-			root_list.add(attri_list);
-			root_list.add(table_list);
+		root_list.add(attri_list);
+		root_list.add(table_list);
+		if (where_index != 0){
 			root_list.add(condition_list);
-			root_list.add(distinc_tree);
-            root = new ParseTree("select", root_list);
+		}
+		if (order_index != 0){
+			root_list.add(order_tree);
+		}
+		if(distinct_flag == 1){
+			root = new ParseTree("select_distinct", root_list);
 		}
 		else{
-			root_list.add(attri_list);
-			root_list.add(table_list);
-			root_list.add(distinc_tree);
 			root = new ParseTree("select", root_list);
 		}
 		return root;

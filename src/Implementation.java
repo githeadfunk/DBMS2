@@ -128,14 +128,24 @@ public class Implementation {
 	
 	public static void projection(Tuple tuple,List<String> attributes){
 		String out = "";
-		for(int i = 0; i < attributes.size(); i++){
-			out = out + tuple.getField(attributes.get(i)) + "		";
+		Schema s = tuple.getSchema();
+		List<String> attri = new ArrayList<String>();
+		if(attributes.get(0) == "*"){
+			for(int i = 0; i < s.getNumOfFields(); i++){
+				attri.add(s.getFieldName(i));
+			}
+		}
+		else{
+			attri = attributes;
+		}
+		for(int i = 0; i < attri.size(); i++){
+			out = out + tuple.getField(attri.get(i)) + "		";
 		}
 		System.out.println(out);
 	}
 	
 	
-	public void select_cross(MainMemory mem, SchemaManager s, ExpressionTree t){
+	public void select_simple(MainMemory mem, SchemaManager s, ExpressionTree t){
 		
 		//-----------extract lists of tables, attributes and conditions-------------
 		List<String> tablelist = new ArrayList<String>();
@@ -296,6 +306,182 @@ public class Implementation {
 		 }
 	}
 	
+	
+	public void select_complex(MainMemory mem, SchemaManager s, ExpressionTree t){
+		
+		//-----------extract lists of tables, attributes and conditions-------------
+		List<String> tablelist = new ArrayList<String>();
+		List<String> attributelist = new ArrayList<String>();
+		List<String> conditionlist = new ArrayList<String>();
+		List<String> sortlist = new ArrayList<String>();
+		int sort_flag = 0, distinct_flag = 0, condition_flag = 0;
+		while(t.symbol != "cross"){
+			switch(t.symbol){
+			case "pi": {
+				for (int i =0; i< t.getAttribute().size(); i++){
+					attributelist.add(t.getAttribute().get(i).getSymbol());
+				}
+				break;
+				}
+			case "pi_distinct": {
+				for (int i =0; i< t.getAttribute().size(); i++){
+					attributelist.add(t.getAttribute().get(i).getSymbol());
+				}
+				distinct_flag = 1;
+				break;
+				}
+			case "sort": {
+				sortlist.add(t.getAttribute().get(0).getSymbol());
+				sort_flag = 1;
+				break;
+				}
+			case "sigma": {
+				for (int i =0; i< t.getAttribute().size(); i++){
+					conditionlist.add(t.getAttribute().get(i).getSymbol());
+				}
+				condition_flag = 1;
+				break;
+				}
+			default: {}
+			}
+			t = t.children.get(0);
+		}
+		for (int i =0; i< t.getAttribute().size(); i++){
+			tablelist.add(t.getAttribute().get(i).getSymbol());
+		}
+		
+	
+		//-----------carry out cross process, nested with con_apply and pi function to get final result 
+		int num = tablelist.size();
+		 if (num ==1){
+			 //--------only one table, just return the table
+			 //return s.getRelation(tablelist.get(0));
+			 Relation table = s.getRelation(tablelist.get(0));
+			 
+			 Block block_reference=mem.getBlock(0); //access to memory block 0
+			 block_reference.clear();
+			 for (int i = 0; i < table.getNumOfBlocks();i++){
+			    	
+				    // read block i of talbe1 into memory block 0
+				    table.getBlock(i, 0);
+				    block_reference=mem.getBlock(0);
+				    Tuple tuple = block_reference.getTuple(0);
+				    if (apply_cons(tuple,conditionlist)){
+				    	projection(tuple,attributelist);
+				    }
+				    
+				    
+			 }
+		 }
+		 else{	
+			 	//-------------cross for 2 tables----------------------
+			 	// get 2 tables
+			 	Relation table1 = s.getRelation(tablelist.get(0));
+			 	Relation table2 = s.getRelation(tablelist.get(1));
+			    // get  field name and type for each table
+			    System.out.print("Creating a schema" + "\n");
+			    ArrayList<String> field_names1= table1.getSchema().getFieldNames();
+			    ArrayList<FieldType> field_types1= table1.getSchema().getFieldTypes();
+			    ArrayList<String> field_names2= table2.getSchema().getFieldNames();
+			    ArrayList<FieldType> field_types2= table2.getSchema().getFieldTypes();
+			    
+			    // initialize field name and type for output table
+			    ArrayList<String> cross_field_name = new ArrayList<String>();
+			    ArrayList<FieldType> cross_field_type =new ArrayList<FieldType>();
+			   
+			    
+			    // deal with common field names in two tables
+			    for (int i = 0; i< field_names1.size();i++){
+			    	for (int j = 0; j< field_names2.size();j++){
+
+			    		if (field_names1.get(i).equals(field_names2.get(j) )){
+			    			System.out.println("repeat");
+			    			field_names1.set(i,tablelist.get(0)+ "."+field_names1.get(i));
+			    			field_names2.set(j,tablelist.get(1)+ "."+field_names2.get(j));
+			    		}
+			    	}
+			    }
+			    
+			    // get field_name, field_type for the cross output
+			    cross_field_name.addAll(field_names1);
+			    cross_field_name.addAll(field_names2);
+			    cross_field_type.addAll(field_types1);
+			    cross_field_type.addAll(field_types2);
+			    System.out.println(cross_field_name);
+			    // get schema for crossed intermediate table
+			    Schema schema=new Schema(cross_field_name,cross_field_type);
+			    // create relation for intermediate table
+			    String relation_name="intermediate";
+			    System.out.print("Creating table " + relation_name + "\n");
+			    Relation relation_reference=s.createRelation(relation_name,schema);
+			    
+			    
+			    // Set up two blocks in the memory each block[0] for table1, block[1] for table2, use nested loop algorithm
+			    Block block_reference=mem.getBlock(0); //access to memory block 0
+			    block_reference.clear();
+		    	Block block_reference1=mem.getBlock(1); //access to memory block 0
+			    block_reference1.clear();
+			    
+			    // outer loop for reading table1
+			    for (int i = 0; i < table1.getNumOfBlocks();i++){
+			    	
+				    // read block i of talbe1 into memory block 0
+				    table1.getBlock(i, 0);
+				    //System.out.println(mem);
+				    
+				    // inner loop for reading table2
+			    	for (int j = 0; j < table2.getNumOfBlocks(); j++){
+
+					    // read block j of talbe2 into memory block 1
+					    table2.getBlock(j, 1);
+					    block_reference=mem.getBlock(0);
+					    block_reference1=mem.getBlock(1);
+					    //System.out.println(block_reference.getTuple(0)+"<<<<<<<"); 
+					    
+					    //get 2 tuples from each table from memory
+					    Tuple t1 = block_reference.getTuple(0);
+					    Tuple t2 = block_reference1.getTuple(0);
+					    
+					    
+					    // create crossed new tuple
+					    Tuple tuple = relation_reference.createTuple();
+					    
+					    // first append values from tuple1 to the new tuple
+					    for (int a =0; a< t1.getNumOfFields();a++){
+					    	//convert to proper fieldType 
+					    	if (field_types1.get(a).toString()=="INT"){
+					    		tuple.setField(a, t1.getField(a).integer );
+					    	}
+					    	else{
+					    		tuple.setField(a, t1.getField(a).str);
+					    	}
+					    }
+					    // then append values from tuple2 to the new tuple
+					    for (int a =0; a< t2.getNumOfFields();a++){
+					    	//System.out.println("getfield"+t2.getField(a));
+					    	//convert to proper fieldType 
+					    	if (field_types2.get(a).toString()=="INT"){
+					    		tuple.setField(a+t1.getNumOfFields(), Integer.parseInt(t2.getField(a).toString()));
+					    	}
+					    	else{
+					    		tuple.setField(a+t1.getNumOfFields(), t2.getField(a).toString());
+					    	}
+					    }
+					    
+					    // append new tuple to the crossed output relation
+					    //appendTupleToRelation(relation_reference, mem, 5,tuple); 
+					    //System.out.println("-----------for test--------");
+					    //System.out.println(relation_reference);
+					    
+					    
+					    // apply sigma and pi
+					    if (apply_cons(tuple,conditionlist)){
+					    	projection(tuple,attributelist);
+					    }    
+			    	}
+			    }    	 
+		 }
+	}
 
 		
 	
