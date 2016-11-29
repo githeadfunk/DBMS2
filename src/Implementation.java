@@ -126,13 +126,23 @@ public class Implementation {
 			return false;
 		}
 	
-	public static void projection(Tuple tuple,List<String> attributes){
-		String out = "";
-		for(int i = 0; i < attributes.size(); i++){
-			out = out + tuple.getField(attributes.get(i)) + "		";
-		}
-		System.out.println(out);
-	}
+		public static void projection(Tuple tuple,List<String> attributes){
+			String out = "";
+			Schema s = tuple.getSchema();
+			List<String> attri = new ArrayList<String>();
+			if(attributes.get(0).equals("*")){
+			for(int i = 0; i < s.getNumOfFields(); i++){
+			attri.add(s.getFieldName(i));
+			}
+			}
+			else{
+			attri = attributes;
+			}
+			for(int i = 0; i < attri.size(); i++){
+			out = out + tuple.getField(attri.get(i)) + " ";
+			}
+			System.out.println(out);
+			}
 	
 	
 	public void select_cross(MainMemory mem, SchemaManager s, ExpressionTree t){
@@ -160,9 +170,9 @@ public class Implementation {
 				tablelist.add(t.getChildren().get(0).getAttribute().get(i).getSymbol());
 			}
 		}
-		System.out.println("table: "+tablelist);
-		System.out.println("attribute: "+attributelist);
-		System.out.println("condition : "+conditionlist);
+		//System.out.println("table: "+tablelist);
+		//System.out.println("attribute: "+attributelist);
+		//System.out.println("condition : "+conditionlist);
 	
 		//-----------carry out cross process, nested with con_apply and pi function to get final result 
 		int num = tablelist.size();

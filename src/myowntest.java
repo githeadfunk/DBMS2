@@ -119,7 +119,7 @@ public class myowntest {
 		int num_busket = (int) Math.ceil(num_block/10.0);
 		int left = num_block % 10;
 		int num_in_busket = 0;
-		System.out.println("test ceil"+num_busket);
+		//System.out.println("test ceil"+num_busket);
 		
 		
 		for (int i =0; i< num_busket;i++){
@@ -133,7 +133,7 @@ public class myowntest {
 				num_in_busket = left;
 				r.getBlocks(10*i, 0, num_in_busket);
 			}
-			System.out.println(mem);
+			//System.out.println(mem);
 			
 			//-----sort them---------
 			// get all tuples read in mem
@@ -184,7 +184,7 @@ public class myowntest {
 		    for (int l=0;l<tuples.size();l++) {
 		        appendTupleToRelation(r,mem,5,tuples.get(l));
 		    }
-			System.out.println(r);
+			//System.out.println(r);
 			
 		}
 		
@@ -195,7 +195,7 @@ public class myowntest {
 		    mem_block = mem.getBlock(i);
 		    mem_block.clear();
 		}
-		System.out.println(mem);
+		//System.out.println(mem);
 		
 		//mem_block_9 used for storing smallest tuple
 	    Block mem_block_9 = mem.getBlock(9);
@@ -265,7 +265,7 @@ public class myowntest {
 				batch[i]=1;
 			}
 		}
-		System.out.println(mem);
+		//System.out.println(mem);
 		//----------comparing sublists store smallest one in block [9], if full write back
 		
 		int sum = 0;
@@ -273,17 +273,17 @@ public class myowntest {
 		for (int i = 0; i< num_busket;i++){
 			sum+=exist_sub[i];
 		}
-		System.out.println("busket"+num_busket);
+		//System.out.println("busket"+num_busket);
 		// when still have remaining tuples, continue loop
 		int count=0;
 		while (sum>0){
-			System.out.println("----------round-"+count+"--------");
+			//System.out.println("----------round-"+count+"--------");
 			int min = Integer.MAX_VALUE;
 			int index = 0;
 			//get the index of the smallest tuple
 			for (int i = 0; i< num_busket; i++){
 				if (exist_sub[i]>0){
-					System.out.println("sublistsize"+i+" "+sublists.get(i));
+					//System.out.println("sublistsize"+i+" "+sublists.get(i));
 					if (min > sublists.get(i).get(point[i]).getField(attribute).integer){
 						min = sublists.get(i).get(point[i]).getField(attribute).integer;
 						index = i;
@@ -300,8 +300,8 @@ public class myowntest {
 				mem_block_9.clear();
 				sort_index++;
 			}
-			System.out.println("index"+index+" "+"point"+point[index]+"left blocks in disk"+disk_block[index]);
-			System.out.println(r);
+			//System.out.println("index"+index+" "+"point"+point[index]+"left blocks in disk"+disk_block[index]);
+			//System.out.println(r);
 			
 			
 			// deal with the changed sublist
@@ -363,7 +363,7 @@ public class myowntest {
 		}
 		
 		r.deleteBlocks(num_block);
-		System.out.println(r);
+		//System.out.println(r);
 				
 		return r;
 	}
