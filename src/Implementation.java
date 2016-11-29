@@ -48,69 +48,83 @@ public class Implementation {
 	
 	
 	//--------separate implementation: projection, apply_con functions------
-	public static boolean apply_cons(Tuple tuple, List<String> cons){
-		ArrayList<Integer> or = new ArrayList<Integer>();
-		boolean res;
-		for(int i = 0; i < cons.size(); i++){
-			if(cons.get(i).equals("or")){
-				or.add(i);
-			}
-		}
-		if(or.size() != 0){
-			int start = 0;
-			int end = 0;
-			res = false; 
-			for(int i = 0; i < or.size() + 1; i++){
-				if(i == or.size()){end = cons.size();}else{end = or.get(i);}
-				res = res | apply_cons(tuple, cons.subList(start, end));
-				if(i != or.size()){start = or.get(i) + 1;}
-			}
-			return res;
-		}
-		else{
-			ArrayList<Integer> and = new ArrayList<Integer>();
+		public static boolean apply_cons(Tuple tuple, List<String> cons){
+			ArrayList<Integer> or = new ArrayList<Integer>();
+			boolean res;
 			for(int i = 0; i < cons.size(); i++){
-				if(cons.get(i).equals("and")){
-					and.add(i);
+				if(cons.get(i).equals("or")){
+					or.add(i);
 				}
 			}
-			if(and.size() != 0){
+			if(or.size() != 0){
 				int start = 0;
 				int end = 0;
-				res = true;
-				for(int i = 0; i < and.size() + 1; i++){
-					if(i == and.size()){end = cons.size();}else{end = and.get(i);}
-					res = res & apply_cons(tuple, cons.subList(start, end));
-					if(i != and.size()){start = and.get(i) + 1;}
+				res = false; 
+				for(int i = 0; i < or.size() + 1; i++){
+					if(i == or.size()){end = cons.size();}else{end = or.get(i);}
+					res = res | apply_cons(tuple, cons.subList(start, end));
+					if(i != or.size()){start = or.get(i) + 1;}
 				}
 				return res;
 			}
 			else{
-				//simple case, only attribute name;
-				Schema s = tuple.getSchema();
-				FieldType f = s.getFieldType(cons.get(0));
-				//System.out.println(cons);
-				if(f.name() == "INT"){
-					int val = tuple.getField(cons.get(0)).integer;
-					switch(cons.get(1)){
-					case "=": if(val == Integer.valueOf(cons.get(2))){return true;}else{return false;}
-					case ">": if(val > Integer.valueOf(cons.get(2))){return true;}else{return false;}
-					case "<": if(val < Integer.valueOf(cons.get(2))){return true;}else{return false;}
+				ArrayList<Integer> and = new ArrayList<Integer>();
+				for(int i = 0; i < cons.size(); i++){
+					if(cons.get(i).equals("and")){
+						and.add(i);
 					}
 				}
+				if(and.size() != 0){
+					int start = 0;
+					int end = 0;
+					res = true;
+					for(int i = 0; i < and.size() + 1; i++){
+						if(i == and.size()){end = cons.size();}else{end = and.get(i);}
+						res = res & apply_cons(tuple, cons.subList(start, end));
+						if(i != and.size()){start = and.get(i) + 1;}
+					}
+					return res;
+				}
 				else{
-					String val = String.valueOf(tuple.getField(cons.get(0)).str);
-					//System.out.println(cons.get(2).substring(0,1));
-					if(cons.get(2).substring(0,1).equals("\"")){
-						//System.out.println(cons.get(2).substring(1,cons.get(2).length()-1));
-						//System.out.println(val);
-						if(val.equals(cons.get(2).substring(1,cons.get(2).length()-1))){return true;}else{return false;}
+					Schema s = tuple.getSchema();
+					FieldType f = s.getFieldType(cons.get(0));
+					ArrayList<String> fields = tuple.getSchema().getFieldNames();
+					if(f.name() == "INT"){
+						int val1 = tuple.getField(cons.get(0)).integer;
+						int val2 = 0;
+						for(int i = 0; i < fields.size(); i++){
+							if(fields.get(i).equals(cons.get(2))){
+								val2 = tuple.getField(cons.get(2)).integer;
+								break;
+							}
+							if(i == fields.size()-1){
+								val2 = Integer.valueOf(cons.get(2));
+							}
+						}
+						switch(cons.get(1)){
+						case "=": if(val1 == val2){return true;}else{return false;}
+						case ">": if(val1 > val2){return true;}else{return false;}
+						case "<": if(val1 < val2){return true;}else{return false;}
+						}
+					}
+					else{
+						String val = String.valueOf(tuple.getField(cons.get(0)).str);
+						String val2 = "";
+						for(int i = 0; i < fields.size(); i++){
+							if(fields.get(i).equals(cons.get(2))){
+								val2 = tuple.getField(cons.get(2)).str;
+								break;
+							}
+							if(i == fields.size()-1){
+								val2 = cons.get(2);
+							}
+						}
+						if(val.equals(val2)){return true;}else{return false;}
 					}
 				}
 			}
+			return false;
 		}
-		return false;
-	}
 	
 	public static void projection(Tuple tuple,List<String> attributes){
 		String out = "";
@@ -166,10 +180,13 @@ public class Implementation {
 				    block_reference=mem.getBlock(0);
 				    
 				    // read all the tuples in memory block 0
-				    int tuple_num = table.getSchema().getTuplesPerBlock();
+				    int tuple_num = block_reference.getNumTuples();
 				    for (int j = 0; j< tuple_num; j++){
 				    	  Tuple tuple = block_reference.getTuple(j);
-						    if (apply_cons(tuple,conditionlist)){
+						    if (conditionlist.size() == 0){
+						    	projection(tuple,attributelist);
+						    }
+						    else if (apply_cons(tuple,conditionlist)){
 						    	projection(tuple,attributelist);
 						    }
 				    }
@@ -200,7 +217,7 @@ public class Implementation {
 			    	for (int j = 0; j< field_names2.size();j++){
 
 			    		if (field_names1.get(i).equals(field_names2.get(j) )){
-			    			System.out.println("repeat");
+			    			//System.out.println("repeat");
 			    			field_names1.set(i,tablelist.get(0)+ "."+field_names1.get(i));
 			    			field_names2.set(j,tablelist.get(1)+ "."+field_names2.get(j));
 			    		}
@@ -244,8 +261,10 @@ public class Implementation {
 					    //System.out.println(block_reference.getTuple(0)+"<<<<<<<"); 
 					    
 					    //get how many tuples exist in a block for table 1 and table2
-					    int num_tuple = table1.getSchema().getTuplesPerBlock();
-					    int num_tuple1 = table2.getSchema().getTuplesPerBlock();
+					    int num_tuple = block_reference.getNumTuples();
+					    int num_tuple1 = block_reference1.getNumTuples();
+					    
+					    
 					    
 					    for (int m = 0; m< num_tuple; m++){
 					    	for(int n =0; n < num_tuple1; n++){
@@ -253,29 +272,35 @@ public class Implementation {
 					    		Tuple t1 = block_reference.getTuple(m);
 							    Tuple t2 = block_reference1.getTuple(n);
 							    
-							    
+							    //System.out.println("i,j,m,n"+i+" "+j+" "+m+" "+n+" ");
 							    // create crossed new tuple
 							    Tuple tuple = relation_reference.createTuple();
-							    
+							    //System.out.println("tuple-0:"+tuple);
 							    // first append values from tuple1 to the new tuple
 							    for (int a =0; a< t1.getNumOfFields();a++){
 							    	//convert to proper fieldType 
 							    	if (field_types1.get(a).toString()=="INT"){
 							    		tuple.setField(a, t1.getField(a).integer );
+							    		 //System.out.println("tuple-1:"+tuple);
 							    	}
 							    	else{
 							    		tuple.setField(a, t1.getField(a).str);
+							    		 //System.out.println("tuple-2:"+tuple);
 							    	}
 							    }
 							    // then append values from tuple2 to the new tuple
+							    
 							    for (int a =0; a< t2.getNumOfFields();a++){
 							    	//System.out.println("getfield"+t2.getField(a));
 							    	//convert to proper fieldType 
+							    	 
 							    	if (field_types2.get(a).toString()=="INT"){
 							    		tuple.setField(a+t1.getNumOfFields(), Integer.parseInt(t2.getField(a).toString()));
+							    		//System.out.println("tuple-3:"+tuple);
 							    	}
 							    	else{
 							    		tuple.setField(a+t1.getNumOfFields(), t2.getField(a).toString());
+							    		//System.out.println("tuple-4:"+tuple);
 							    	}
 							    }
 							    
@@ -286,7 +311,10 @@ public class Implementation {
 							    
 							    
 							    // apply sigma and pi
-							    if (apply_cons(tuple,conditionlist)){
+							    if (conditionlist.size() == 0){
+							    	projection(tuple,attributelist);
+							    }
+							    else if (apply_cons(tuple,conditionlist)){
 							    	projection(tuple,attributelist);
 							    }    
 					    	}
