@@ -406,6 +406,7 @@ public class myowntest {
 	    else{
 	    	while (inputFile.hasNext()){
 	    		String statement = inputFile.nextLine();
+	    		System.out.println(statement);
 	    		Lexer lex = new Lexer(statement);
 			    ParseTree tree = lex.gettree();
 			    if (tree.symbol == "create"){
@@ -417,7 +418,7 @@ public class myowntest {
 			    else if (tree.symbol == "drop"){
 			    	drop(schema_manager, tree);
 			    }
-			    else if (tree.symbol == "select"){
+			    else if (tree.symbol == "select" || tree.symbol == "select_distinct"){
 			    	ETConstruct et = new ETConstruct(tree);
 				    ExpressionTree e;
 				    e = et.construct();
