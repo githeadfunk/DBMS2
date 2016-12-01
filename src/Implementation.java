@@ -146,7 +146,7 @@ public class Implementation {
 			}
 	
 	
-	public Relation cross(Relation table1, Relation table2){
+	public Relation cross(Relation table1, Relation table2, Boolean naturaljoin){
 		
 	
 		 	//-------------cross for 2 tables----------------------
@@ -170,8 +170,8 @@ public class Implementation {
 
 		    		if (field_names1.get(i).equals(field_names2.get(j) )){
 		    			//System.out.println("repeat");
-		    			field_names1.set(i,table1+ "."+field_names1.get(i));
-		    			field_names2.set(j,table2+ "."+field_names2.get(j));
+		    			field_names1.set(i,table1.getRelationName()+ "."+field_names1.get(i));
+		    			field_names2.set(j,table2.getRelationName()+ "."+field_names2.get(j));
 		    		}
 		    	}
 		    }
@@ -185,81 +185,145 @@ public class Implementation {
 		    // get schema for crossed intermediate table
 		    Schema schema=new Schema(cross_field_name,cross_field_type);
 		    // create relation for intermediate table
-		    String relation_name="intermediate"+table1+table2;
-		    //System.out.print("Creating table " + relation_name + "\n");
+		    String relation_name="intermediate"+table1.getRelationName()+table2.getRelationName();
+		    //System.out.print("&&&&&"+schema);
 		    Relation relation_reference=s.createRelation(relation_name,schema);
 		    
 		    
-		    // Set up two blocks in the memory each block[0] for table1, block[1] for table2, use nested loop algorithm
-		    Block block_reference=mem.getBlock(0); //access to memory block 0
-		    block_reference.clear();
-	    	Block block_reference1=mem.getBlock(1); //access to memory block 0
-		    block_reference1.clear();
+		    //if natural join, the shared attributes
+		    List<String> commonattributes = new ArrayList<String>();
+		    if (naturaljoin == true)
+		    {
+		    	for (int i = 0; i<table1.getSchema().getNumOfFields(); i++){
+		    		for (int j = 0; j<table2.getSchema().getNumOfFields(); j++){
+		    			if (table1.getSchema().getFieldName(i).equals(table2.getSchema().getFieldName(j))){
+		    				commonattributes.add(table1.getSchema().getFieldName(i)) ;
+		    			}
+		    		}
+		    	}
+		    }
+		    //System.out.println("%%%%%%%%%%%%%%%%%% "+ commonattributes);
 		    
-		    // outer loop for reading table1
-		    for (int i = 0; i < table1.getNumOfBlocks();i++){
-		    	
-			    // read block i of talbe1 into memory block 0
-			    table1.getBlock(i, 0);
-			    //System.out.println(mem);
-			    
-			    // inner loop for reading table2
-		    	for (int j = 0; j < table2.getNumOfBlocks(); j++){
+			// some basic parameters
+			int num_block1 = table1.getNumOfBlocks();
+			int num_busket1 = (int) Math.ceil(num_block1/5.0);
+			int left1 = num_block1 % 5;
+			int num_in_busket1 = 0;
+			
+			int num_block2 = table2.getNumOfBlocks();
+			int num_busket2 = (int) Math.ceil(num_block2/5.0);
+			int left2 = num_block2 % 5;
+			int num_in_busket2 = 0;
+			//System.out.println("test ceil"+num_busket);
+			//System.out.println("tupleperblock "+table2.getNumOfTuples() +"num_block2 "+num_block2+"num_busket2 "+num_busket2);
+			
+			
+			for (int i =0; i< num_busket1;i++){
 
-				    // read block j of talbe2 into memory block 1
-				    table2.getBlock(j, 1);
-				    block_reference=mem.getBlock(0);
-				    block_reference1=mem.getBlock(1);
-				    //System.out.println(block_reference.getTuple(0)+"<<<<<<<"); 
+				//System.out.println("i"+i);
+				
+				
+			    for (int x = 0; x<5;x++){ //access to memory block 0
+			    	Block block_reference=mem.getBlock(0);
+			    	block_reference.clear();
+			    }
+			    
+				
+				if (5*i+5 <= num_block1){
+					num_in_busket1 = 5;
+					table1.getBlocks(5*i, 0, num_in_busket1);
+				}
+				else{
+					num_in_busket1 = left1;
+					table1.getBlocks(5*i, 0, num_in_busket1);
+				}
+				
+				ArrayList<Tuple> tuples1=new ArrayList<Tuple>();
+				tuples1=mem.getTuples(0,num_in_busket1);
+				
+				for (int j =0; j< num_busket2;j++){
+					//System.out.println("j"+j);
+				
+					
+				    for (int y = 5; y<10;y++){ //access to memory block 0
+				    	Block block_reference=mem.getBlock(0);
+				    	block_reference.clear();
+				    }
+					
+					if (5*j+5 <= num_block2){
+						num_in_busket2 = 5;
+						table2.getBlocks(5*j, 5, num_in_busket2);
+					}
+					else{
+						num_in_busket2 = left2;
+						table2.getBlocks(5*j, 5, num_in_busket2);
+					}
+					
+					ArrayList<Tuple> tuples2=new ArrayList<Tuple>();
+					tuples2=mem.getTuples(5,num_in_busket1);
+		    
 				    
-				    //get how many tuples exist in a block for table 1 and table2
-				    int num_tuple = block_reference.getNumTuples();
-				    int num_tuple1 = block_reference1.getNumTuples();
-				    
-				    
-				    
-				    for (int m = 0; m< num_tuple; m++){
-				    	for(int n =0; n < num_tuple1; n++){
+				    for (int m = 0; m< tuples1.size(); m++){
+				    	//System.out.println("m"+m);
+				    	for(int n =0; n < tuples2.size(); n++){
+				    		//System.out.println("n"+n);
 				    		// cross each tuple from one table with tuples in the other table
-				    		Tuple t1 = block_reference.getTuple(m);
-						    Tuple t2 = block_reference1.getTuple(n);
+				    		Tuple t1 = tuples1.get(m);
+						    Tuple t2 = tuples2.get(n);
+						    //System.out.println(t1.getField("b").integer==t2.getField("b").integer);
 						    
-						    //System.out.println("i,j,m,n"+i+" "+j+" "+m+" "+n+" ");
-						    // create crossed new tuple
-						    Tuple tuple = relation_reference.createTuple();
-						    //System.out.println("tuple-0:"+tuple);
-						    // first append values from tuple1 to the new tuple
-						    for (int a =0; a< t1.getNumOfFields();a++){
-						    	//convert to proper fieldType 
-						    	if (field_types1.get(a).toString()=="INT"){
-						    		tuple.setField(a, t1.getField(a).integer );
-						    		 //System.out.println("tuple-1:"+tuple);
+						    Boolean naturalcontain = true;
+						    for (int c = 0; c < commonattributes.size(); c++ ){
+						    	if (t1.getField(commonattributes.get(c)).integer != t2.getField(commonattributes.get(c)).integer){
+						    		naturalcontain = false;
+						    		
 						    	}
-						    	else{
-						    		tuple.setField(a, t1.getField(a).str);
-						    		 //System.out.println("tuple-2:"+tuple);
-						    	}
-						    }
-						    // then append values from tuple2 to the new tuple
-						    
-						    for (int a =0; a< t2.getNumOfFields();a++){
-						    	//System.out.println("getfield"+t2.getField(a));
-						    	//convert to proper fieldType 
-						    	 
-						    	if (field_types2.get(a).toString()=="INT"){
-						    		tuple.setField(a+t1.getNumOfFields(), Integer.parseInt(t2.getField(a).toString()));
-						    		//System.out.println("tuple-3:"+tuple);
-						    	}
-						    	else{
-						    		tuple.setField(a+t1.getNumOfFields(), t2.getField(a).toString());
-						    		//System.out.println("tuple-4:"+tuple);
-						    	}
+						    	//System.out.println(t1.getField(commonattributes.get(c)).integer+" "+t2.getField(commonattributes.get(c)).integer+naturalcontain);
 						    }
 						    
-						    // append new tuple to the crossed output relation
-						    appendTupleToRelation(relation_reference, mem, 5,tuple); 
-						    //System.out.println("-----------for test--------");
-						    //System.out.println(relation_reference);
+						    
+						    if (!(naturaljoin == true && naturalcontain == false)){
+						    	
+						    
+						    	Tuple tuple = relation_reference.createTuple();
+							    //System.out.println("tuple-0:"+tuple);
+							    // first append values from tuple1 to the new tuple
+							    for (int a =0; a< t1.getNumOfFields();a++){
+							    	//convert to proper fieldType 
+							    	if (field_types1.get(a).toString()=="INT"){
+							    		tuple.setField(a, t1.getField(a).integer );
+							    		 //System.out.println("tuple-1:"+tuple);
+							    	}
+							    	else{
+							    		tuple.setField(a, t1.getField(a).str);
+							    		 //System.out.println("tuple-2:"+tuple);
+							    	}
+							    }
+							    // then append values from tuple2 to the new tuple
+							    
+							    for (int a =0; a< t2.getNumOfFields();a++){
+							    	//System.out.println("getfield"+t2.getField(a));
+							    	//convert to proper fieldType 
+							    	 
+							    	if (field_types2.get(a).toString()=="INT"){
+							    		tuple.setField(a+t1.getNumOfFields(), Integer.parseInt(t2.getField(a).toString()));
+							    		//System.out.println("tuple-3:"+tuple);
+							    	}
+							    	else{
+							    		tuple.setField(a+t1.getNumOfFields(), t2.getField(a).toString());
+							    		//System.out.println("tuple-4:"+tuple);
+							    	}
+							    }
+							    //System.out.println(tuple);
+							    // append new tuple to the crossed output relation
+							    appendTupleToRelation(relation_reference, mem, 5,tuple);
+							    //System.out.println(relation_reference);
+							    //System.out.println("-----------for test--------");
+							    //System.out.println(relation_reference);
+						    }
+						    
+						    
+						    
 				    	}
 				    }
 				    
@@ -480,35 +544,49 @@ public class Implementation {
 					count++;
 				}
 			 }
-			 
-			 // get crossed relation for multiple tables
-			 Relation cross_relation = cross(s.getRelation(tablelist.get(0)),s.getRelation(tablelist.get(1)));
-			 for (int i = 2; i<num;i++){
-				 cross_relation = cross(cross_relation, s.getRelation(tablelist.get(i)));
+			 Boolean naturaljoin = false;
+			 Relation cross_relation;
+			 if (conditionlist.size() == 3*tablelist.size()+tablelist.size()-1){
+				 naturaljoin = true;
+				 cross_relation = cross(s.getRelation(tablelist.get(0)),s.getRelation(tablelist.get(1)), true);
+				 for (int i = 2; i<num;i++){
+					 cross_relation = cross(cross_relation, s.getRelation(tablelist.get(i)),true);
+				 }
 			 }
+			 else{
+				 cross_relation = cross(s.getRelation(tablelist.get(0)),s.getRelation(tablelist.get(1)), false);
+				 for (int i = 2; i<num;i++){
+					 cross_relation = cross(cross_relation, s.getRelation(tablelist.get(i)), true);
+				 }
+			 }
+			 // get crossed relation for multiple tables
+			
 			 
 			 // read crossed table into memory and apply condition and projection
 			 Block block_reference=mem.getBlock(0); //access to memory block 0
 			 block_reference.clear();
+			 
 			 for (int i = 0; i < cross_relation.getNumOfBlocks();i++){
-			    	
-				    // read block i of talbe1 into memory block 0
-				    cross_relation.getBlock(i, 0);
-				    block_reference=mem.getBlock(0);
-				    
-				    // read all the tuples in memory block 0
-				    int tuple_num = block_reference.getNumTuples();
-				    for (int j = 0; j< tuple_num; j++){
-				    	  Tuple tuple = block_reference.getTuple(j);
-						    if (conditionlist.size() == 0){
-						    	projection(tuple,attributelist);
-						    }
-						    else if (apply_cons(tuple,conditionlist)){
-						    	projection(tuple,attributelist);
-						    }
-				    }
-				  			    
-			 }
+				    	
+				// read block i of talbe1 into memory block 0
+				cross_relation.getBlock(i, 0);
+				block_reference=mem.getBlock(0);
+					    
+				// read all the tuples in memory block 0
+				int tuple_num = block_reference.getNumTuples();
+				for (int j = 0; j< tuple_num; j++){
+					Tuple tuple = block_reference.getTuple(j);
+					if (conditionlist.size() == 0 || naturaljoin == true){
+						projection(tuple,attributelist);
+					}
+					else if (apply_cons(tuple,conditionlist)){
+						projection(tuple,attributelist);
+					}
+				 }
+					  			    
+			}
+			 
+			 
 			 
 		 }
 	}
