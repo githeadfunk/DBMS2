@@ -401,12 +401,19 @@ public class myowntest {
 			    else if (tree.symbol == "drop"){
 			    	drop(schema_manager, tree);
 			    }
-			    else if (tree.symbol == "select" || tree.symbol == "select_distinct"){
+			    else if (tree.symbol == "select" ){
 			    	ETConstruct et = new ETConstruct(tree);
 				    ExpressionTree e;
 				    e = et.construct();
 				    Implementation imp = new Implementation(e, mem, schema_manager);
-				    imp.select_cross(mem, schema_manager,e);
+				    imp.select_simple(mem, schema_manager,e);
+			    }
+			    else if( tree.symbol == "select_distinct"){
+			    	ETConstruct et = new ETConstruct(tree);
+				    ExpressionTree e;
+				    e = et.construct();
+				    Implementation imp = new Implementation(e, mem, schema_manager);
+				    imp.select_complex(mem, schema_manager,e);
 			    }
 			    
 	    	}
