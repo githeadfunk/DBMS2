@@ -11,28 +11,28 @@ public class myowntest {
 	private static void appendTupleToRelation(Relation relation_reference, MainMemory mem, int memory_block_index, Tuple tuple) {
 	    Block block_reference;
 	    if (relation_reference.getNumOfBlocks()==0) {
-	      System.out.print("The relation is empty" + "\n");
-	      System.out.print("Get the handle to the memory block " + memory_block_index + " and clear it" + "\n");
+	      //System.out.print("The relation is empty" + "\n");
+	      //System.out.print("Get the handle to the memory block " + memory_block_index + " and clear it" + "\n");
 	      block_reference=mem.getBlock(memory_block_index);
 	      block_reference.clear(); //clear the block
 	      block_reference.appendTuple(tuple); // append the tuple
-	      System.out.print("Write to the first block of the relation" + "\n");
+	      //System.out.print("Write to the first block of the relation" + "\n");
 	      relation_reference.setBlock(relation_reference.getNumOfBlocks(),memory_block_index);
 	    } else {
-	      System.out.print("Read the last block of the relation into memory block 5:" + "\n");
+	      //System.out.print("Read the last block of the relation into memory block 5:" + "\n");
 	      relation_reference.getBlock(relation_reference.getNumOfBlocks()-1,memory_block_index);
 	      block_reference=mem.getBlock(memory_block_index);
 
 	      if (block_reference.isFull()) {
-	        System.out.print("(The block is full: Clear the memory block and append the tuple)" + "\n");
+	        //System.out.print("(The block is full: Clear the memory block and append the tuple)" + "\n");
 	        block_reference.clear(); //clear the block
 	        block_reference.appendTuple(tuple); // append the tuple
-	        System.out.print("Write to a new block at the end of the relation" + "\n");
+	        //System.out.print("Write to a new block at the end of the relation" + "\n");
 	        relation_reference.setBlock(relation_reference.getNumOfBlocks(),memory_block_index); //write back to the relation
 	      } else {
-	        System.out.print("(The block is not full: Append it directly)" + "\n");
+	        //System.out.print("(The block is not full: Append it directly)" + "\n");
 	        block_reference.appendTuple(tuple); // append the tuple
-	        System.out.print("Write to the last block of the relation" + "\n");
+	        //System.out.print("Write to the last block of the relation" + "\n");
 	        relation_reference.setBlock(relation_reference.getNumOfBlocks()-1,memory_block_index); //write back to the relation
 	      }
 	    }
@@ -377,25 +377,7 @@ public class myowntest {
 		disk.resetDiskIOs();
 	    disk.resetDiskTimer();
 	    //--------------------
-	    
-	    //String[] statements = new String[4];
-	    //statements[0]="CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20);";
-	    //statements[1]="INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\");";
-	    //statements[2]="INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 90, 90, \"E\'  f\");";
-	    //statements[3]="SELECT exam FROM course;";
-	    //--------------------
-	    //String raw_statement = "DROP TABLE course";
-		//String raw_statement = "SELECT wyh,atm FROM c, course2 WHERE course.sid = course2.sid AND course.exam > course2.exam;";
-	    //String raw_statement = "INSERT INTO course (sid, homework, project, exam, grade) VALUES (12, 0, 100, 100, \"E\'  f\")";
-		//String raw_statement = "INSERT INTO course VALUES (\"2 d d\", 0, 100, 100, \"E\'  f\")";
-	    //String raw_statement = "CREATE TABLE course (sid INT, homework INT, project INT, exam INT, grade STR20)";
-	    
-	    //System.out.print("Starting, the memory contains: " + "\n");
-	    //System.out.print(mem + "\n");
 
-	    //System.out.print("Starting, Current schemas and relations: " + "\n");
-	    //System.out.print(schema_manager + "\n");
-	    
 	    
 	    File file = new File("/Users/zy/Desktop/Course/CSCE608_Database/Project2/DBMS2/src/test.txt");
 	    Scanner inputFile = new Scanner(file);
@@ -406,7 +388,7 @@ public class myowntest {
 	    else{
 	    	while (inputFile.hasNext()){
 	    		String statement = inputFile.nextLine();
-	    		System.out.println(statement);
+	    		//System.out.println(statement);
 	    		Lexer lex = new Lexer(statement);
 			    ParseTree tree = lex.gettree();
 			    if (tree.symbol == "create"){
@@ -414,6 +396,7 @@ public class myowntest {
 			    }
 			    else if (tree.symbol ==  "insert"){
 			    	insert(mem, schema_manager, tree);
+			    	
 			    }
 			    else if (tree.symbol == "drop"){
 			    	drop(schema_manager, tree);
@@ -432,19 +415,9 @@ public class myowntest {
 	    inputFile.close();
 	    
 	    //-------test sortby----------------------------
-	    sortby(mem, schema_manager.getRelation("course"), "homework");
+	    //sortby(mem, schema_manager.getRelation("course"), "homework");
 	    
 		
-		
-	   System.out.print("After, the memory contains: " + "\n");
-	    //System.out.print(mem + "\n");
-
-	    //System.out.print("After, Current schemas and relations: " + "\n");
-	    //System.out.print(schema_manager + "\n");
-		
-		
-	   
-		 //------select test-------
 		
 		
 	}
