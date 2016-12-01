@@ -148,7 +148,7 @@ public class Implementation {
 				point[i] = 0;
 				// sublist all exist at beginning
 				exist_sub[i] = 1;
-				// first batch from sublist i
+				// first batch from sublist is
 				batch[i]=1;
 				
 			}
