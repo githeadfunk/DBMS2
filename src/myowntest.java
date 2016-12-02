@@ -38,6 +38,90 @@ public class myowntest {
 	    }
 	  }
 	
+	public static boolean apply_cons(Tuple tuple, List<String> cons){
+		ArrayList<Integer> or = new ArrayList<Integer>();
+		boolean res;
+		for(int i = 0; i < cons.size(); i++){
+			if(cons.get(i).equals("or")){
+				or.add(i);
+			}
+		}
+		if(or.size() != 0){
+			int start = 0;
+			int end = 0;
+			res = false; 
+			for(int i = 0; i < or.size() + 1; i++){
+				if(i == or.size()){end = cons.size();}else{end = or.get(i);}
+				res = res | apply_cons(tuple, cons.subList(start, end));
+				if(i != or.size()){start = or.get(i) + 1;}
+			}
+			return res;
+		}
+		else{
+			ArrayList<Integer> and = new ArrayList<Integer>();
+			for(int i = 0; i < cons.size(); i++){
+				if(cons.get(i).equals("and")){
+					and.add(i);
+				}
+			}
+			if(and.size() != 0){
+				int start = 0;
+				int end = 0;
+				res = true;
+				for(int i = 0; i < and.size() + 1; i++){
+					if(i == and.size()){end = cons.size();}else{end = and.get(i);}
+					res = res & apply_cons(tuple, cons.subList(start, end));
+					if(i != and.size()){start = and.get(i) + 1;}
+				}
+				return res;
+			}
+			else{
+				Schema s = tuple.getSchema();
+				FieldType f = s.getFieldType(cons.get(0));
+				ArrayList<String> fields = tuple.getSchema().getFieldNames();
+				if(f.name() == "INT"){
+					int val1 = tuple.getField(cons.get(0)).integer;
+					int val2 = 0;
+					for(int i = 0; i < fields.size(); i++){
+						if(fields.get(i).equals(cons.get(2))){
+							val2 = tuple.getField(cons.get(2)).integer;
+							break;
+						}
+						if(i == fields.size()-1){
+							val2 = Integer.valueOf(cons.get(2));
+						}
+					}
+					switch(cons.get(1)){
+					case "=": if(val1 == val2){return true;}else{return false;}
+					case ">": if(val1 > val2){return true;}else{return false;}
+					case "<": if(val1 < val2){return true;}else{return false;}
+					}
+				}
+				else{
+					String val = String.valueOf(tuple.getField(cons.get(0)).str);
+					String val2 = "";
+					if(cons.get(2).charAt(0)=='"'){
+						System.out.println("))))");
+						String inter = cons.get(2).substring(1,cons.get(2).length()-1);
+						//cons.get(2).replace('"', '\0');
+						cons.set(2, inter);
+						}
+					for(int i = 0; i < fields.size(); i++){
+						if(fields.get(i).equals(cons.get(2))){
+							val2 = tuple.getField(cons.get(2)).str;
+							break;
+						}
+						if(i == fields.size()-1){
+							val2 = cons.get(2);
+						}
+					}
+					if(val.equals(val2)){return true;}else{return false;}
+				}
+			}
+		}
+		return false;
+	}
+
 	
 	public static void create(SchemaManager s,ParseTree t){
 		
@@ -57,6 +141,7 @@ public class myowntest {
 	    //System.out.print("After Create table the relation contains: " + "\n");
 	   // System.out.print(relation_reference + "\n" + "\n");
 	}
+	
 	public static void insert(MainMemory mem, SchemaManager s,ParseTree t){
 		//check relation exist
 		if(s.relationExists(t.children.get(0).symbol)){
@@ -109,8 +194,86 @@ public class myowntest {
 	}
 	
 	public static void drop(SchemaManager s,ParseTree t){
+		s.deleteRelation(t.symbol);
+	}
+	
+	public static void delete(MainMemory mem, SchemaManager s,ParseTree t){
+		
+		List<String> conditionlist = new ArrayList<String>();
+		Relation r = s.getRelation(t.getChildren().get(0).getSymbol());
+		System.out.println("--------before--------");
+		System.out.println(r);
+		
+		
+		if (t.getChildren().size()==1){
+			System.out.println("delete");
+			
+			r.deleteBlocks(0);
+			
+		}
+		else{
+			
+			//get conditionlist
+			for (int i = 0; i < t.getChildren().get(1).getChildren().size(); i++){
+				conditionlist.add(t.getChildren().get(1).getChildren().get(i).getSymbol());
+			}
+	
+			int num_blocks = r.getNumOfBlocks();
+			int batch = (int) Math.ceil(num_blocks/10.0);
+			int left = num_blocks % 10;
+			
+			
+			for (int i = 0; i< batch; i++){
+				if (10*i+10 <= num_blocks){
+					int read_blocks = 10;
+					// read from disk
+					r.getBlocks(10*i, 0, read_blocks);
+					for (int j = 0; j<read_blocks; j++){
+						Block block_reference = mem.getBlock(j);
+						int num_tuples = block_reference.getNumTuples();
+						for (int x = 0; x < num_tuples; x++){
+							Tuple tuple = block_reference.getTuple(x);
+							
+							if (apply_cons(tuple,conditionlist)){
+								block_reference.invalidateTuple(x);
+							}
+						}
+						
+					}
+					// write back to disk
+					r.setBlocks(10*i, 0, read_blocks);
+				}
+				else{
+					
+					int read_blocks = left;
+					// read from disk
+					r.getBlocks(10*i, 0, read_blocks);
+					for (int j = 0; j<read_blocks; j++){
+						Block block_reference = mem.getBlock(j);
+						int num_tuples = block_reference.getNumTuples();
+						for (int x = 0; x < num_tuples; x++){
+							Tuple tuple = block_reference.getTuple(x);
+							System.out.println(tuple);
+							System.out.println(apply_cons(tuple,conditionlist));
+							if (apply_cons(tuple,conditionlist)){
+								block_reference.invalidateTuple(x);
+							}
+						}
+						
+					}
+					// write back to disk
+					r.setBlocks(10*i, 0, read_blocks);
+					
+				}
+			}
+			
+			
+		}
+		System.out.println("--------after--------");
+		System.out.println(r);
 		
 	}
+	
 	
 	public static Relation sortby(MainMemory mem, Relation r, String attribute){
 		//==============1.read in 10 blocks each time as a busket and sort them and append back============
@@ -400,6 +563,10 @@ public class myowntest {
 			    }
 			    else if (tree.symbol == "drop"){
 			    	drop(schema_manager, tree);
+			    }
+			    else if (tree.symbol == "delete"){
+			    	delete(mem, schema_manager, tree);
+			    	
 			    }
 			    else if (tree.symbol == "select" ){
 			    	ETConstruct et = new ETConstruct(tree);
