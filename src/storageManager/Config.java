@@ -13,7 +13,7 @@ public class Config {
     //public static int NUM_OF_BLOCKS_IN_MEMORY = 300;
 
   //Setting true turns on the simulated disk latency
-    public static boolean SIMULATED_DISK_LATENCY_ON = true; 
+    public static boolean SIMULATED_DISK_LATENCY_ON = false; 
   //Setting to true turns on the debug message of disk I/O incrementation
     public static boolean DISK_I_O_DEBUG = false; 
 
