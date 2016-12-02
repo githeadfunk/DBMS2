@@ -53,9 +53,6 @@ public class myowntest {
 	    Schema schema=new Schema(field_names,field_types);
 	    String relation_name = t.children.get(0).symbol;
 	    Relation relation_reference=s.createRelation(relation_name,schema);
-	    //------print relation-------
-	    //System.out.print("After Create table the relation contains: " + "\n");
-	   // System.out.print(relation_reference + "\n" + "\n");
 	}
 	public static void insert(MainMemory mem, SchemaManager s,ParseTree t){
 		//check relation exist
@@ -67,11 +64,12 @@ public class myowntest {
 	    	Tuple tuple = r.createTuple();
 	    	List<ParseTree> names = t.children.get(1).children;
 	    	List<ParseTree> values = t.children.get(2).children;
-		    ArrayList<String> field_names = r.getSchema().getFieldNames();
-		    ArrayList<FieldType> field_types = r.getSchema().getFieldTypes();
+	    	Schema sch = r.getSchema();
+		    ArrayList<String> field_names = sch.getFieldNames();
+		    ArrayList<FieldType> field_types = sch.getFieldTypes();
 		    //create tuple
-		    for(int i = 0; i < t.children.get(1).children.size(); i ++ ){
-	    		if(field_types.get(i).equals(FieldType.INT)){
+		    for(int i = 0; i < names.size(); i ++ ){
+		    	if(sch.getFieldType(names.get(i).symbol).equals(FieldType.INT)){
 		    		tuple.setField(names.get(i).symbol, Integer.parseInt(values.get(i).symbol));
 	    		}
 	    		else{
@@ -104,7 +102,6 @@ public class myowntest {
 		}
 	    else{
 	    	System.err.println("relatoin not exists");
-	    	//throwexception relation not exist and go back to command input or stop
 	    }
 	}
 	
@@ -507,7 +504,7 @@ public class myowntest {
 	    disk.resetDiskTimer();
 	    //--------------------
 	    
-	    File file = new File("H:/Courses/2016_Fall/Database/Project_2/Projects/my/src/test.txt");
+	    File file = new File("H:/Courses/2016_Fall/Database/Project_2/Projects/my/src/test_simple.txt");
 	    Scanner inputFile = new Scanner(file);
 	    if (!file.exists()){
 	    	System.err.println("File doesn't exists!");
@@ -518,30 +515,33 @@ public class myowntest {
 	    		String statement = inputFile.nextLine();
 	    		Lexer lex = new Lexer(statement);
 			    ParseTree tree = lex.gettree();
+			    ExpressionTree e = null;
+			    Implementation imp = new Implementation(e, mem, schema_manager);
+			    
 			    if (tree.symbol == "create"){
-			    	create(schema_manager, tree);
+			    	imp.create(schema_manager, tree);
 			    }
 			    else if (tree.symbol ==  "insert"){
-			    	insert(mem, schema_manager, tree);
+			    	imp.insert(mem, schema_manager, tree);
 			    }
 			    else if (tree.symbol == "drop"){
-			    	drop(schema_manager, tree);
+			    	imp.drop(schema_manager, tree);
+			    }
+			    else if (tree.symbol == "delete"){
+			    	imp.delete(mem, schema_manager, tree);
 			    }
 			    else if (tree.symbol == "select_distinct"){
 			    	
 			    	ETConstruct et = new ETConstruct(tree);
-				    ExpressionTree e;
 				    e = et.construct();
-				    Implementation imp = new Implementation(e, mem, schema_manager);
+				    
 				    imp.select_complex(mem, schema_manager, e);
 				    
 			    }
 			    else if (tree.symbol == "select"){
 			    	
 			    	ETConstruct et = new ETConstruct(tree);
-				    ExpressionTree e;
 				    e = et.construct();
-				    Implementation imp = new Implementation(e, mem, schema_manager);
 				    imp.select_simple(mem, schema_manager, e);
 				    
 			    }
@@ -550,22 +550,7 @@ public class myowntest {
 	    	
 	    }
 	    inputFile.close();
-	    Relation r1 = schema_manager.getRelation("course");
-	    System.out.println(r1.toString());
-	    Relation r2 = schema_manager.getRelation("course2");
-	    System.out.println(r2.toString());
-	    
-	    //-------test sortby----------------------------
-	    sortby(mem, schema_manager.getRelation("course"), "homework");
-	    
-		
-		
-	   System.out.print("After, the memory contains: " + "\n");
-	    //System.out.print(mem + "\n");
-
-	    //System.out.print("After, Current schemas and relations: " + "\n");
-	    //System.out.print(schema_manager + "\n");
-		
+	   
 		
 	   
 		 //------select test-------

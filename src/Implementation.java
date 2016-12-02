@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 import storageManager.*;
+import sun.invoke.empty.Empty;
 
 public class Implementation {
 	ExpressionTree exptree;
@@ -15,6 +16,265 @@ public class Implementation {
 		this.s = s;
 		this.mem = mem;
 	}
+	
+	public void drop(SchemaManager s,ParseTree t){
+		s.deleteRelation(t.symbol);
+	}
+	
+	public void insert(MainMemory mem, SchemaManager s,ParseTree t){
+		//check relation exist
+		if(s.relationExists(t.children.get(0).symbol)){
+	    	Relation r = s.getRelation(t.children.get(0).symbol);
+	    	//check filed_types match, to be finished.......
+	    	//System.out.println("relation exists");
+	    	//create a tuple
+	    	Tuple tuple = r.createTuple();
+	    	List<ParseTree> names = t.children.get(1).children;
+	    	List<ParseTree> values = t.children.get(2).children;
+	    	Schema sch = r.getSchema();
+		    ArrayList<String> field_names = sch.getFieldNames();
+		    ArrayList<FieldType> field_types = sch.getFieldTypes();
+		    //create tuple
+		    for(int i = 0; i < names.size(); i ++ ){
+		    	if(sch.getFieldType(names.get(i).symbol).equals(FieldType.INT)){
+		    		tuple.setField(names.get(i).symbol, Integer.parseInt(values.get(i).symbol));
+	    		}
+	    		else{
+		    		tuple.setField(names.get(i).symbol, values.get(i).symbol.substring(1, values.get(i).symbol.length()-1));
+	    		}
+	    	}
+		    //insert tuple
+		    Block mem_block;
+		    mem_block = mem.getBlock(0);
+		    mem_block.clear(); //clear the block
+		    if(r.getNumOfBlocks() == 0){
+			    mem_block.appendTuple(tuple); // append the tuple
+		    	r.setBlock(r.getNumOfBlocks(), 0);
+		    }
+		    else{
+		    	r.getBlock(r.getNumOfBlocks()-1, 0);
+		    	mem_block = mem.getBlock(0);
+		    	if(mem_block.isFull()){
+		    		mem_block.clear();
+		    		mem_block.appendTuple(tuple); // append the tuple
+			    	r.setBlock(r.getNumOfBlocks(), 0);
+		    	}
+		    	else{
+		    		mem_block.appendTuple(tuple); // append the tuple
+			    	r.setBlock(r.getNumOfBlocks()-1, 0);
+		    	}
+		    }
+		    
+		    
+		}
+	    else{
+	    	System.err.println("relatoin not exists");
+	    }
+	}
+	
+	
+	public void create(SchemaManager s,ParseTree t){
+		
+		ArrayList<String> field_names=new ArrayList<String>();
+	    ArrayList<FieldType> field_types=new ArrayList<FieldType>();
+	    List<ParseTree> names = t.children.get(1).children;
+	    List<ParseTree> types = t.children.get(2).children;
+	    for(int i = 0; i < names.size(); i ++){
+	    	field_names.add(names.get(i).symbol);
+	    	field_types.add(FieldType.valueOf(types.get(i).symbol.toUpperCase()));
+	    }
+	    
+	    Schema schema=new Schema(field_names,field_types);
+	    String relation_name = t.children.get(0).symbol;
+	    Relation relation_reference=s.createRelation(relation_name,schema);
+	}
+	
+	public Relation cross(Relation table1, Relation table2, Boolean naturaljoin){
+		
+		
+	 	//-------------cross for 2 tables----------------------
+	 	// get 2 tables
+
+	    // get  field name and type for each table
+	    //System.out.print("Creating a schema" + "\n");
+	    ArrayList<String> field_names1= table1.getSchema().getFieldNames();
+	    ArrayList<FieldType> field_types1= table1.getSchema().getFieldTypes();
+	    ArrayList<String> field_names2= table2.getSchema().getFieldNames();
+	    ArrayList<FieldType> field_types2= table2.getSchema().getFieldTypes();
+	    
+	    // initialize field name and type for output table
+	    ArrayList<String> cross_field_name = new ArrayList<String>();
+	    ArrayList<FieldType> cross_field_type =new ArrayList<FieldType>();
+	   
+	    
+	    // deal with common field names in two tables
+	    for (int i = 0; i< field_names1.size();i++){
+	    	for (int j = 0; j< field_names2.size();j++){
+
+	    		if (field_names1.get(i).equals(field_names2.get(j) )){
+	    			//System.out.println("repeat");
+	    			field_names1.set(i,table1.getRelationName()+ "."+field_names1.get(i));
+	    			field_names2.set(j,table2.getRelationName()+ "."+field_names2.get(j));
+	    		}
+	    	}
+	    }
+	    
+	    // get field_name, field_type for the cross output
+	    cross_field_name.addAll(field_names1);
+	    cross_field_name.addAll(field_names2);
+	    cross_field_type.addAll(field_types1);
+	    cross_field_type.addAll(field_types2);
+	    //System.out.println(cross_field_name);
+	    // get schema for crossed intermediate table
+	    Schema schema=new Schema(cross_field_name,cross_field_type);
+	    // create relation for intermediate table
+	    String relation_name="intermediate"+table1.getRelationName()+table2.getRelationName();
+	    //System.out.print("&&&&&"+schema);
+	    Relation relation_reference=s.createRelation(relation_name,schema);
+	    
+	    
+	    //if natural join, the shared attributes
+	    List<String> commonattributes = new ArrayList<String>();
+	    if (naturaljoin == true)
+	    {
+	    	for (int i = 0; i<table1.getSchema().getNumOfFields(); i++){
+	    		for (int j = 0; j<table2.getSchema().getNumOfFields(); j++){
+	    			if (table1.getSchema().getFieldName(i).equals(table2.getSchema().getFieldName(j))){
+	    				commonattributes.add(table1.getSchema().getFieldName(i)) ;
+	    			}
+	    		}
+	    	}
+	    }
+	    //System.out.println("%%%%%%%%%%%%%%%%%% "+ commonattributes);
+	    
+		// some basic parameters
+		int num_block1 = table1.getNumOfBlocks();
+		int num_busket1 = (int) Math.ceil(num_block1/5.0);
+		int left1 = num_block1 % 5;
+		int num_in_busket1 = 0;
+		
+		int num_block2 = table2.getNumOfBlocks();
+		int num_busket2 = (int) Math.ceil(num_block2/5.0);
+		int left2 = num_block2 % 5;
+		int num_in_busket2 = 0;
+		//System.out.println("test ceil"+num_busket);
+		//System.out.println("tupleperblock "+table2.getNumOfTuples() +"num_block2 "+num_block2+"num_busket2 "+num_busket2);
+		
+		
+		for (int i =0; i< num_busket1;i++){
+
+			//System.out.println("i"+i);
+			
+			
+		    for (int x = 0; x<5;x++){ //access to memory block 0
+		    	Block block_reference=mem.getBlock(0);
+		    	block_reference.clear();
+		    }
+		    
+			
+			if (5*i+5 <= num_block1){
+				num_in_busket1 = 5;
+				table1.getBlocks(5*i, 0, num_in_busket1);
+			}
+			else{
+				num_in_busket1 = left1;
+				table1.getBlocks(5*i, 0, num_in_busket1);
+			}
+			
+			ArrayList<Tuple> tuples1=new ArrayList<Tuple>();
+			tuples1=mem.getTuples(0,num_in_busket1);
+			
+			for (int j =0; j< num_busket2;j++){
+				//System.out.println("j"+j);
+			
+				
+			    for (int y = 5; y<10;y++){ //access to memory block 0
+			    	Block block_reference=mem.getBlock(0);
+			    	block_reference.clear();
+			    }
+				
+				if (5*j+5 <= num_block2){
+					num_in_busket2 = 5;
+					table2.getBlocks(5*j, 5, num_in_busket2);
+				}
+				else{
+					num_in_busket2 = left2;
+					table2.getBlocks(5*j, 5, num_in_busket2);
+				}
+				
+				ArrayList<Tuple> tuples2=new ArrayList<Tuple>();
+				tuples2=mem.getTuples(5,num_in_busket1);
+	    
+			    
+			    for (int m = 0; m< tuples1.size(); m++){
+			    	//System.out.println("m"+m);
+			    	for(int n =0; n < tuples2.size(); n++){
+			    		//System.out.println("n"+n);
+			    		// cross each tuple from one table with tuples in the other table
+			    		Tuple t1 = tuples1.get(m);
+					    Tuple t2 = tuples2.get(n);
+					    //System.out.println(t1.getField("b").integer==t2.getField("b").integer);
+					    
+					    Boolean naturalcontain = true;
+					    for (int c = 0; c < commonattributes.size(); c++ ){
+					    	if (t1.getField(commonattributes.get(c)).integer != t2.getField(commonattributes.get(c)).integer){
+					    		naturalcontain = false;
+					    		
+					    	}
+					    	//System.out.println(t1.getField(commonattributes.get(c)).integer+" "+t2.getField(commonattributes.get(c)).integer+naturalcontain);
+					    }
+					    
+					    
+					    if (!(naturaljoin == true && naturalcontain == false)){
+					    	
+					    
+					    	Tuple tuple = relation_reference.createTuple();
+						    //System.out.println("tuple-0:"+tuple);
+						    // first append values from tuple1 to the new tuple
+						    for (int a =0; a< t1.getNumOfFields();a++){
+						    	//convert to proper fieldType 
+						    	if (field_types1.get(a).toString()=="INT"){
+						    		tuple.setField(a, t1.getField(a).integer );
+						    		 //System.out.println("tuple-1:"+tuple);
+						    	}
+						    	else{
+						    		tuple.setField(a, t1.getField(a).str);
+						    		 //System.out.println("tuple-2:"+tuple);
+						    	}
+						    }
+						    // then append values from tuple2 to the new tuple
+						    
+						    for (int a =0; a< t2.getNumOfFields();a++){
+						    	//System.out.println("getfield"+t2.getField(a));
+						    	//convert to proper fieldType 
+						    	 
+						    	if (field_types2.get(a).toString()=="INT"){
+						    		tuple.setField(a+t1.getNumOfFields(), Integer.parseInt(t2.getField(a).toString()));
+						    		//System.out.println("tuple-3:"+tuple);
+						    	}
+						    	else{
+						    		tuple.setField(a+t1.getNumOfFields(), t2.getField(a).toString());
+						    		//System.out.println("tuple-4:"+tuple);
+						    	}
+						    }
+						    //System.out.println(tuple);
+						    // append new tuple to the crossed output relation
+						    appendTupleToRelation(relation_reference, mem, 5,tuple);
+						    //System.out.println(relation_reference);
+						    //System.out.println("-----------for test--------");
+						    //System.out.println(relation_reference);
+					    }
+					    
+					    
+					    
+			    	}
+			    }
+			    
+	    	}
+	    }    	 
+        return relation_reference;
+	
+}
 	
 	public static Relation sortby(MainMemory mem, Relation r, String attribute){
 		//==============1.read in 10 blocks each time as a busket and sort them and append back============
@@ -85,10 +345,17 @@ public class Implementation {
 		    	//System.out.print(tuples.get(k).toString()+"\n");
 			//System.out.println(r);
 			//----append back-----------
-		    for (int l=0;l<tuples.size();l++) {
-		        appendTupleToRelation(r,mem,5,tuples.get(l));
-		    }
-			System.out.println(r);
+			for (int l=0;l<tuples.size();l++) {
+				if (l==0){
+				Block mem_block;
+				mem_block = mem.getBlock(0);
+				mem_block.clear();
+				mem_block.appendTuple(tuples.get(0));
+				r.setBlock(r.getNumOfBlocks(), 0);
+				}
+				appendTupleToRelation(r,mem,5,tuples.get(l));
+				}
+				System.out.println(r);
 			
 		}
 		
@@ -308,7 +575,7 @@ public class Implementation {
 		ArrayList<Integer> or = new ArrayList<Integer>();
 		boolean res;
 		for(int i = 0; i < cons.size(); i++){
-			if(cons.get(i).equals("or")){
+			if(cons.get(i).toLowerCase().equals("or")){
 				or.add(i);
 			}
 		}
@@ -326,7 +593,7 @@ public class Implementation {
 		else{
 			ArrayList<Integer> and = new ArrayList<Integer>();
 			for(int i = 0; i < cons.size(); i++){
-				if(cons.get(i).equals("and")){
+				if(cons.get(i).toLowerCase().equals("and")){
 					and.add(i);
 				}
 			}
@@ -366,6 +633,10 @@ public class Implementation {
 				else{
 					String val = String.valueOf(tuple.getField(cons.get(0)).str);
 					String val2 = "";
+					if(cons.get(2).charAt(0)=='"'){
+						String inter = cons.get(2).substring(1,cons.get(2).length()-1);
+						cons.set(2, inter);
+					}
 					for(int i = 0; i < fields.size(); i++){
 						if(fields.get(i).equals(cons.get(2))){
 							val2 = tuple.getField(cons.get(2)).str;
@@ -394,16 +665,62 @@ public class Implementation {
 		else{
 			attri = attributes;
 		}
+		for(int i = 0; i < attri.size(); i ++){
+			out = out + attri.get(i) + "		";
+		}
+		System.out.println(out);
+		out = "";
 		for(int i = 0; i < attri.size(); i++){
 			out = out + tuple.getField(attri.get(i)) + "		";
 		}
 		System.out.println(out);
 	}
 	
+	public static void projection_relation(MainMemory mem, Relation r, List<String> attributes){
+		Schema s = r.getSchema();
+		List<String> attri = new ArrayList<String>();
+		if(attributes.get(0).equals("*")){
+			for(int i = 0; i < s.getNumOfFields(); i++){
+				if(!s.getFieldName(i).equals("distinct")){
+					attri.add(s.getFieldName(i));
+				}
+			}
+		}
+		else{
+			attri = attributes;
+		}
+		String o = "";
+		for(int i = 0; i < attri.size(); i ++){
+			o = o + attri.get(i) + "		";
+		}
+		System.out.println(o);
+		Block b = mem.getBlock(0);
+		b.clear();
+		for(int j =0; j < r.getNumOfBlocks(); j++){
+			r.getBlock(j,0);
+			b = mem.getBlock(0);
+			List<Tuple> tuples = b.getTuples();
+			List<Tuple> ts = new ArrayList<Tuple>();
+			for(int m = 0; m < tuples.size(); m ++){
+				if(!tuples.get(m).isNull()){
+					ts.add(tuples.get(m));
+				}
+			}
+			for(int k = 0; k < ts.size(); k++){
+				String out = "";
+				Tuple tuple = ts.get(k);
+				for(int i = 0; i < attri.size(); i++){
+					out = out + tuple.getField(attri.get(i)) + "		";
+				}
+				System.out.println(out);
+			}
+		}
+	}
 	
 	
 	
-	public void select_simple(MainMemory mem, SchemaManager s, ExpressionTree t){
+	
+public void select_simple(MainMemory mem, SchemaManager s, ExpressionTree t){
 		
 		//-----------extract lists of tables, attributes and conditions-------------
 		List<String> tablelist = new ArrayList<String>();
@@ -434,11 +751,20 @@ public class Implementation {
 	
 		//-----------carry out cross process, nested with con_apply and pi function to get final result 
 		int num = tablelist.size();
-		 if (num ==1){
+		if (num ==1){
 			 //--------only one table, just return the table
 			 //return s.getRelation(tablelist.get(0));
 			 Relation table = s.getRelation(tablelist.get(0));
-			 
+			 List<String> attri_list = new ArrayList<String>();
+			 for(int i = 0; i < attributelist.size(); i++){
+				 if(attributelist.get(i).contains(".")){
+					 int idx = attributelist.get(i).indexOf(".");
+					 attri_list.add(attributelist.get(i).substring(idx+1,attributelist.get(i).length()));
+				 }
+				 else{
+					 attri_list.add(attributelist.get(i));
+				 }
+			 }
 			 Block block_reference=mem.getBlock(0); //access to memory block 0
 			 block_reference.clear();
 			 for (int i = 0; i < table.getNumOfBlocks();i++){
@@ -452,10 +778,10 @@ public class Implementation {
 				    for (int j = 0; j< tuple_num; j++){
 				    	  Tuple tuple = block_reference.getTuple(j);
 						    if (conditionlist.size() == 0){
-						    	projection(tuple,attributelist);
+						    	projection(tuple,attri_list);
 						    }
 						    else if (apply_cons(tuple,conditionlist)){
-						    	projection(tuple,attributelist);
+						    	projection(tuple,attri_list);
 						    }
 				    }
 				  
@@ -463,13 +789,13 @@ public class Implementation {
 				    
 			 }
 		 }
-		 else{	
+		 else if (num ==2){	
 			 	//-------------cross for 2 tables----------------------
 			 	// get 2 tables
 			 	Relation table1 = s.getRelation(tablelist.get(0));
 			 	Relation table2 = s.getRelation(tablelist.get(1));
 			    // get  field name and type for each table
-			    System.out.print("Creating a schema" + "\n");
+			    //System.out.print("Creating a schema" + "\n");
 			    ArrayList<String> field_names1= table1.getSchema().getFieldNames();
 			    ArrayList<FieldType> field_types1= table1.getSchema().getFieldTypes();
 			    ArrayList<String> field_names2= table2.getSchema().getFieldNames();
@@ -497,12 +823,12 @@ public class Implementation {
 			    cross_field_name.addAll(field_names2);
 			    cross_field_type.addAll(field_types1);
 			    cross_field_type.addAll(field_types2);
-			    System.out.println(cross_field_name);
+			    //System.out.println(cross_field_name);
 			    // get schema for crossed intermediate table
 			    Schema schema=new Schema(cross_field_name,cross_field_type);
 			    // create relation for intermediate table
 			    String relation_name="intermediate";
-			    System.out.print("Creating table " + relation_name + "\n");
+			    //System.out.print("Creating table " + relation_name + "\n");
 			    Relation relation_reference=s.createRelation(relation_name,schema);
 			    
 			    
@@ -579,10 +905,25 @@ public class Implementation {
 							    
 							    
 							    // apply sigma and pi
+							    List<String> con_list = new ArrayList<String>();
+								 for(int k = 0; k < conditionlist.size(); k++){
+									 if(conditionlist.get(k).contains(".")){
+										 if(!cross_field_name.contains(conditionlist.get(k))){
+											 int idx = conditionlist.get(k).indexOf(".");
+											 con_list.add(conditionlist.get(k).substring(idx+1,conditionlist.get(k).length()));
+										 }
+										 else{
+											 con_list.add(conditionlist.get(k));
+										 }
+									 }
+									 else{
+										 con_list.add(conditionlist.get(k));
+									 }
+								 }
 							    if (conditionlist.size() == 0){
 							    	projection(tuple,attributelist);
 							    }
-							    else if (apply_cons(tuple,conditionlist)){
+							    else if (apply_cons(tuple,con_list)){
 							    	projection(tuple,attributelist);
 							    }    
 					    	}
@@ -591,9 +932,77 @@ public class Implementation {
 			    	}
 			    }    	 
 		 }
+		 else{
+			 // get list of relations sorted by size
+			 //System.out.println("t1"+s.getRelation("t1"));
+			 //System.out.println("#of blocks"+s.getRelation("t1").getNumOfBlocks());
+			 //System.out.println("#of tuples"+s.getRelation("t1").getNumOfTuples());
+			 List<Relation> relations = new ArrayList<Relation>();
+			 relations.add(s.getRelation(tablelist.get(0)));
+			 int count = 1;
+			 
+			 for (int j = 0; j<relations.size(); j++){
+				if (count >= tablelist.size()){
+					break;
+				}
+				else if (s.getRelation(tablelist.get(count)).getNumOfBlocks() < relations.get(j).getNumOfBlocks()){
+					relations.add(j,s.getRelation(tablelist.get(count)) );
+					count++;
+					//System.out.println("relation"+relations);
+				}
+				else if(j==relations.size()-1){
+					relations.add(j+1,s.getRelation(tablelist.get(count)) );
+					count++;
+				}
+			 }
+			 Boolean naturaljoin = false;
+			 Relation cross_relation;
+			 if (conditionlist.size() == 3*tablelist.size()+tablelist.size()-1){
+				 naturaljoin = true;
+				 cross_relation = cross(s.getRelation(tablelist.get(0)),s.getRelation(tablelist.get(1)), true);
+				 for (int i = 2; i<num;i++){
+					 cross_relation = cross(cross_relation, s.getRelation(tablelist.get(i)),true);
+				 }
+			 }
+			 else{
+				 cross_relation = cross(s.getRelation(tablelist.get(0)),s.getRelation(tablelist.get(1)), false);
+				 for (int i = 2; i<num;i++){
+					 cross_relation = cross(cross_relation, s.getRelation(tablelist.get(i)), true);
+				 }
+			 }
+			 // get crossed relation for multiple tables
+			
+			 
+			 // read crossed table into memory and apply condition and projection
+			 Block block_reference=mem.getBlock(0); //access to memory block 0
+			 block_reference.clear();
+			 
+			 for (int i = 0; i < cross_relation.getNumOfBlocks();i++){
+				    	
+				// read block i of talbe1 into memory block 0
+				cross_relation.getBlock(i, 0);
+				block_reference=mem.getBlock(0);
+					    
+				// read all the tuples in memory block 0
+				int tuple_num = block_reference.getNumTuples();
+				for (int j = 0; j< tuple_num; j++){
+					Tuple tuple = block_reference.getTuple(j);
+					if (conditionlist.size() == 0 || naturaljoin == true){
+						projection(tuple,attributelist);
+					}
+					else if (apply_cons(tuple,conditionlist)){
+						projection(tuple,attributelist);
+					}
+				 }
+					  			    
+			}
+			 
+			 
+			 
+		 }
 	}
 	
-	public static void distinct(Relation cross, List<String> attributes, List<String> sortlist, SchemaManager s, MainMemory mem){
+	public static Relation distinct(Relation cross, List<String> attributes, List<String> sortlist, SchemaManager s, MainMemory mem){
 		//Create distinc relation
 		Schema sch = cross.getSchema();
 		ArrayList<String> field_names = sch.getFieldNames();
@@ -604,9 +1013,10 @@ public class Implementation {
 	    	dis_field_names.add(attributes.get(i));
 	    	dis_field_types.add(sch.getFieldType(attributes.get(i)));
 	    }
-	    dis_field_names.add(sortlist.get(0));
-    	dis_field_types.add(sch.getFieldType(sortlist.get(0)));
-    	
+	    if(sortlist.size() != 0){
+	    	dis_field_names.add(sortlist.get(0));
+	    	dis_field_types.add(sch.getFieldType(sortlist.get(0)));
+	    }	  
 		dis_field_names.add("distinct");
 		dis_field_types.add(FieldType.valueOf("INT"));
 		Schema schema=new Schema(dis_field_names,dis_field_types);
@@ -647,6 +1057,8 @@ public class Implementation {
 			}
 		}
 		distinct = sortby(mem, distinct, "distinct");
+		delete_dublicate(mem, s, distinct);
+		return distinct;
 		
 	}
 	
@@ -694,9 +1106,19 @@ public class Implementation {
 		}
 		
 		Relation cross = cross_join(tablelist, conditionlist, condition_flag);
-		distinct(cross, attributelist, sortlist, s, mem);
-		System.out.print(cross);
-	
+		Relation dis = null;
+		if(distinct_flag == 1){
+			dis = distinct(cross, attributelist, sortlist, s, mem);
+			if(sort_flag == 1){
+				dis = sortby(mem, dis, sortlist.get(0));
+			}
+		}
+		else{
+			if(sort_flag == 1){
+				dis = sortby(mem, cross, sortlist.get(0));
+			}
+		}		
+		projection_relation(mem, dis, attributelist);
 		
 	}
 
@@ -854,4 +1276,126 @@ public class Implementation {
 					    return cross;
 				 	}
 			}
+	public void delete(MainMemory mem, SchemaManager s,ParseTree t){
+		
+		List<String> conditionlist = new ArrayList<String>();
+		Relation r = s.getRelation(t.getChildren().get(0).getSymbol());
+		if (t.getChildren().size()==1){
+			System.out.println("delete");
+			
+			r.deleteBlocks(0);
+			
+		}
+		else{
+			
+			//get conditionlist
+			for (int i = 0; i < t.getChildren().get(1).getChildren().size(); i++){
+				conditionlist.add(t.getChildren().get(1).getChildren().get(i).getSymbol());
+			}
+	
+			int num_blocks = r.getNumOfBlocks();
+			int batch = (int) Math.ceil(num_blocks/10.0);
+			int left = num_blocks % 10;
+			
+			
+			for (int i = 0; i< batch; i++){
+				if (10*i+10 <= num_blocks){
+					int read_blocks = 10;
+					// read from disk
+					r.getBlocks(10*i, 0, read_blocks);
+					for (int j = 0; j<read_blocks; j++){
+						Block block_reference = mem.getBlock(j);
+						int num_tuples = block_reference.getNumTuples();
+						for (int x = 0; x < num_tuples; x++){
+							Tuple tuple = block_reference.getTuple(x);
+							
+							if (apply_cons(tuple,conditionlist)){
+								block_reference.invalidateTuple(x);
+							}
+						}
+						
+					}
+					// write back to disk
+					r.setBlocks(10*i, 0, read_blocks);
+				}
+				else{
+					
+					int read_blocks = left;
+					// read from disk
+					r.getBlocks(10*i, 0, read_blocks);
+					for (int j = 0; j<read_blocks; j++){
+						Block block_reference = mem.getBlock(j);
+						int num_tuples = block_reference.getNumTuples();
+						for (int x = 0; x < num_tuples; x++){
+							Tuple tuple = block_reference.getTuple(x);
+							if (apply_cons(tuple,conditionlist)){
+								block_reference.invalidateTuple(x);
+							}
+						}
+						
+					}
+					// write back to disk
+					r.setBlocks(10*i, 0, read_blocks);
+				}
+			}
+		}
+	}
+	
+	public static void delete_dublicate(MainMemory mem, SchemaManager s, Relation r){
+			
+		int num_blocks = r.getNumOfBlocks();
+		int batch = (int) Math.ceil(num_blocks/10.0);
+		int left = num_blocks % 10;
+		int before = -1;
+		int current = 0;
+		
+		for (int i = 0; i< batch; i++){
+			if (10*i+10 <= num_blocks){
+				int read_blocks = 10;
+				// read from disk
+				r.getBlocks(10*i, 0, read_blocks);
+				for (int j = 0; j<read_blocks; j++){
+					Block block_reference = mem.getBlock(j);
+					int num_tuples = block_reference.getNumTuples();
+					for (int x = 0; x < num_tuples; x++){
+						Tuple tuple = block_reference.getTuple(x);
+						current = tuple.getField("distinct").integer;
+						if(before == current){
+							block_reference.invalidateTuple(x);
+						}
+						else{
+							before = current;
+						}
+					}
+					
+				}
+				// write back to disk
+				r.setBlocks(10*i, 0, read_blocks);
+			}
+			else{
+				
+				int read_blocks = left;
+				// read from disk
+				r.getBlocks(10*i, 0, read_blocks);
+				for (int j = 0; j<read_blocks; j++){
+					Block block_reference = mem.getBlock(j);
+					int num_tuples = block_reference.getNumTuples();
+					for (int x = 0; x < num_tuples; x++){
+						Tuple tuple = block_reference.getTuple(x);
+						current = tuple.getField("distinct").integer;
+						if(before == current){
+							block_reference.invalidateTuple(x);
+						}
+						else{
+							before = current;
+						}
+					}
+					
+				}
+				// write back to disk
+				r.setBlocks(10*i, 0, read_blocks);
+				
+			}
+		}
+	}
 }

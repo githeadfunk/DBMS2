@@ -1,0 +1,2 @@
+INSERT INTO course (sid, homework, project, exam, grade) SELECT * FROM course
+SELECT * FROM course WHERE (exam + homework) = 200

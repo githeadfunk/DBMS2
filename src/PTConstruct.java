@@ -16,59 +16,11 @@ public class PTConstruct {
 		case "create": t = create();break;
 		case "insert": t = insert();break;
 		case "drop":   t = drop();break;
+		case "delete": t = delete();break;
 		default: t = create();
 		}
 		return t;
 	}
-	/*
-	public ParseTree select(){
-		int count = 0;
-		int from_index = 0, where_index = 0;
-		for(String s : this.statement){
-	    	if(s.toLowerCase().equals("from")){
-	    		from_index = count;
-	    	}
-	    	if(s.toLowerCase().equals("where")){
-	    		where_index = count;
-	    	}
-	    	count += 1;
-	    }
-		//construct attributes list
-		ArrayList<ParseTree> attributes = new ArrayList<ParseTree>();
-		for(int i = 1; i < from_index; i++){
-			if(!this.statement.get(i).equals(",")){
-				attributes.add(new ParseTree(this.statement.get(i)));
-			}
-		}
-		ParseTree attri_list = new ParseTree("attri_list", attributes);
-		
-		//construct tables list
-		ArrayList<ParseTree> tables = new ArrayList<ParseTree>();
-		for(int i = from_index + 1; i < where_index; i++){
-			if(!this.statement.get(i).equals(",")){
-				tables.add(new ParseTree(this.statement.get(i)));
-			}
-		}
-		ParseTree table_list = new ParseTree("table_list", tables);
-		
-		//construct conditions list
-		ArrayList<ParseTree> conditions = new ArrayList<ParseTree>();
-		for(int i = where_index + 1; i < this.statement.size(); i++){
-			if(!this.statement.get(i).equals(",")){
-				conditions.add(new ParseTree(this.statement.get(i)));
-			}
-		}
-		ParseTree condition_list = new ParseTree("condition_list", conditions);
-		
-		//construct whole ParseTree
-		ArrayList<ParseTree> root_list = new ArrayList<ParseTree>();
-		root_list.add(attri_list);
-		root_list.add(table_list);
-		root_list.add(condition_list);
-		ParseTree root = new ParseTree("select", root_list);
-		return root;
-	}
-	*/
 	
 	public ParseTree select(){
 		int count = 0;
@@ -259,4 +211,36 @@ public class PTConstruct {
 		ParseTree t = new ParseTree(statement.get(2));
 		return t;
 	}
+	
+	public ParseTree delete(){
+    	int count = 0;
+    	int where_index = 0;
+		for(String s : this.statement){
+	    	
+	    	if(s.toLowerCase().equals("where")){
+	    		where_index = count;
+	    	}
+	    	count += 1;
+	    }
+		List<ParseTree> children = new ArrayList<ParseTree>();
+		ParseTree table = new ParseTree(this.statement.get(2));
+		children.add(table);
+		
+		if (where_index != 0){
+			List<ParseTree> conditions = new ArrayList<ParseTree>();						
+			// index for the condition loop
+			int searchindex = this.statement.size();					
+			
+			for(int i = where_index + 1; i < searchindex; i++){
+				
+				conditions.add(new ParseTree(this.statement.get(i)));	
+				
+			}	
+			ParseTree condition_list = new ParseTree("condition_list", conditions);
+			children.add(condition_list);
+		}
+		ParseTree delete = new ParseTree("delete", children);
+		return delete;
+		
+    }
 }
