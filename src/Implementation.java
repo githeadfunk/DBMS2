@@ -377,6 +377,12 @@ public class Implementation {
 					else{
 						String val = String.valueOf(tuple.getField(cons.get(0)).str);
 						String val2 = "";
+						if(cons.get(2).charAt(0)=='"'){
+							
+							String inter = cons.get(2).substring(1,cons.get(2).length()-1);
+							//cons.get(2).replace('"', '\0');
+							cons.set(2, inter);
+						}
 						for(int i = 0; i < fields.size(); i++){
 							if(fields.get(i).equals(cons.get(2))){
 								val2 = tuple.getField(cons.get(2)).str;
