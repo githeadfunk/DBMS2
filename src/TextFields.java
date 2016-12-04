@@ -1,24 +1,33 @@
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
+import java.awt.FlowLayout;
 
+import javax.swing.JFrame;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
 
 import storageManager.Disk;
 import storageManager.MainMemory;
 import storageManager.SchemaManager;
 
 import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
 public class TextFields implements ActionListener
 {
@@ -156,6 +165,12 @@ public class TextFields implements ActionListener
 
    public static void main(String[] args)
    {
+	   try{
+		    PrintWriter writer = new PrintWriter("out.txt", "UTF-8");
+		    writer.close();
+		}catch(IOException ex) {}
+		
+	   
 	   disk.resetDiskIOs();
 	   disk.resetDiskTimer();
 	   new TextFields();

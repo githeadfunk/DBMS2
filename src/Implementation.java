@@ -5,6 +5,10 @@ import java.util.Scanner;
 
 import storageManager.*;
 import sun.invoke.empty.Empty;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 public class Implementation {
 	ExpressionTree exptree;
@@ -68,6 +72,7 @@ public class Implementation {
 		}
 	    else{
 	    	System.err.println("relatoin not exists");
+	    	write2file("relatoin not exists");
 	    }
 	}
 	
@@ -618,6 +623,7 @@ public class Implementation {
 			out = out + tuple.getField(attributes.get(i)) + "		";
 		}
 		System.out.println(out);
+		write2file(out);
 	}
 	
 	public static void projection_relation(MainMemory mem, Relation r, List<String> attributes){
@@ -638,6 +644,7 @@ public class Implementation {
 			o = o + attri.get(i) + "		";
 		}
 		System.out.println(o);
+		write2file(o);
 		Block b = mem.getBlock(0);
 		b.clear();
 		for(int j =0; j < r.getNumOfBlocks(); j++){
@@ -657,6 +664,7 @@ public class Implementation {
 					out = out + tuple.getField(attri.get(i)) + "		";
 				}
 				System.out.println(out);
+				write2file(out);
 			}
 		}
 	}
@@ -712,6 +720,7 @@ public class Implementation {
 					out = out + attri.get(i) + "		";
 			 }
 			 System.out.println(out);
+			 write2file(out);
 				
 			 for(int i = 0; i < attri.size(); i++){
 				 if(attri.get(i).contains(".")){
@@ -795,6 +804,7 @@ public class Implementation {
 					out = out + attri.get(i) + "		";
 				}
 				System.out.println(out);
+				write2file(out);
 				
 			    // create relation for intermediate table
 			    String relation_name="intermediate";
@@ -937,6 +947,7 @@ public class Implementation {
 					out = out + attri.get(i) + "		";
 				}
 				System.out.println(out);
+				write2file(out);
 			 
 			 // read crossed table into memory and apply condition and projection
 			 Block block_reference=mem.getBlock(0); //access to memory block 0
@@ -1371,5 +1382,16 @@ public class Implementation {
 				
 			}
 		}
+	}
+	public static void write2file(String s){
+		try {
+	           FileWriter fileWriter =
+	               new FileWriter("out.txt", true);
+	           BufferedWriter bufferedWriter =
+	               new BufferedWriter(fileWriter);
+	           bufferedWriter.write(s);
+	           bufferedWriter.newLine();
+	           bufferedWriter.close();
+	       }catch(IOException ex) {}
 	}
 }
