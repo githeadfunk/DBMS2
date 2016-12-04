@@ -3,28 +3,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
-import java.awt.FlowLayout;
 
-import javax.swing.JFrame;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
 
 import storageManager.Disk;
 import storageManager.MainMemory;
 import storageManager.SchemaManager;
 
 import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
 public class TextFields implements ActionListener
 {
