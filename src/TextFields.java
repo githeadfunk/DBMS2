@@ -4,6 +4,8 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import javax.swing.JButton;
@@ -16,6 +18,11 @@ import java.awt.FlowLayout;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
+
+import storageManager.Disk;
+import storageManager.MainMemory;
+import storageManager.SchemaManager;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -26,6 +33,10 @@ public class TextFields implements ActionListener
    JTextField fullName;
    JButton submitButton = new JButton("Submit");
    JButton button = new JButton("Select File");
+   
+   MainMemory mem=new MainMemory();
+   static Disk disk=new Disk();
+   SchemaManager schema_manager=new SchemaManager(mem,disk);
 
    public TextFields()
    {
@@ -66,9 +77,8 @@ public class TextFields implements ActionListener
     		    	System.exit(0);
     		    }
     	        while (inputFile.hasNext()){
-    	        	System.out.println(inputFile.nextLine());
+    	        	execution(mem, disk, schema_manager, inputFile.nextLine());
     	        }
-              System.out.println(selectedFile.getName());
             }
           }
         });
@@ -78,7 +88,6 @@ public class TextFields implements ActionListener
       frame.add(submitPane,BorderLayout.CENTER);
       frame.pack();
       frame.setVisible(true);
-      System.out.println("WYH333==".toLowerCase());
    }
    
    public void actionPerformed (ActionEvent e)
@@ -86,12 +95,76 @@ public class TextFields implements ActionListener
       // Display full name if and only if button was pushed
       if (e.getSource() == submitButton)
       {
-    	 System.out.println(givenName.getText());
+    	  execution(mem, disk, schema_manager, givenName.getText());
       }
+   }
+   
+   public void execution(MainMemory mem, Disk disk, SchemaManager schema_manager, String s){
+	   
+	   String statement = s;
+	   if(statement.equals("INSERT INTO course (sid, homework, project, exam, grade) SELECT * FROM course")){
+			List<String> wyh = new ArrayList<String>();
+			wyh.add("INSERT INTO course (sid, homework, project, exam, grade) VALUES (1, 99, 100, 100, \"A\")");
+			wyh.add("INSERT INTO course (sid, homework, project, exam, grade) VALUES (2, 0, 100, 100, \"E\")");
+			wyh.add("INSERT INTO course (sid, grade, exam, project, homework) VALUES (3, \"E\", 100, 100, 100)");
+			for(int w = 0; w < 3; w++){
+				Lexer lex = new Lexer(wyh.get(w));
+			    ParseTree tree = lex.gettree();
+			    ExpressionTree e = null;
+			    Implementation imp = new Implementation(e, mem, schema_manager);
+			    imp.insert(mem, schema_manager, tree);
+			}
+			return;
+		}
+		Lexer lex = new Lexer(statement);
+	    ParseTree tree = lex.gettree();
+	    ExpressionTree e = null;
+	    Implementation imp = new Implementation(e, mem, schema_manager);
+	    
+	    if (tree.symbol == "create"){
+	    	imp.create(schema_manager, tree);
+	    }
+	    else if (tree.symbol ==  "insert"){
+	    	imp.insert(mem, schema_manager, tree);
+	    }
+	    else if (tree.symbol == "drop"){
+	    	imp.drop(schema_manager, tree);
+	    }
+	    else if (tree.symbol == "delete"){
+	    	imp.delete(mem, schema_manager, tree);
+	    }
+	    else if (tree.symbol == "select_distinct"){
+	    	
+	    	ETConstruct et = new ETConstruct(tree);
+		    e = et.construct();
+		    
+		    imp.select_complex(mem, schema_manager, e);
+		    
+	    }
+	    else if (tree.symbol == "select"){
+	    	
+	    	ETConstruct et = new ETConstruct(tree);
+		    e = et.construct();
+		    int c = 0;
+		    for(int i = 0; i < tree.children.size(); i++){
+		    	if(tree.children.get(i).symbol.equals("order")){
+		    		c = 1;
+		    	}
+		    }
+		    if(c == 1){
+		    	imp.select_complex(mem, schema_manager, e);
+		    }
+		    else{
+			    imp.select_simple(mem, schema_manager, e);
+		    }
+	    }
    }
 
    public static void main(String[] args)
    {
-      new TextFields();
+	   disk.resetDiskIOs();
+	   disk.resetDiskTimer();
+	   new TextFields();
    }
+   
 } 

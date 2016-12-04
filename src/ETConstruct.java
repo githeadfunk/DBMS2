@@ -49,7 +49,6 @@ public class ETConstruct {
 		    	pi = new ExpressionTree("pi_distinct",list1,names_for_select);
 		    }
 			
-			System.out.println("&&&&&");
 		}
 		// no order but condition
 		else if (n == 3 && parsetree.getChildren().get(2).getSymbol() == "condition_list"){

@@ -207,8 +207,9 @@ public class PTConstruct {
 	}
 	
 	public ParseTree drop(){
-		System.out.println(statement.get(2));
-		ParseTree t = new ParseTree(statement.get(2));
+		List<ParseTree> children = new ArrayList<ParseTree>();
+		children.add(new ParseTree(statement.get(2)));
+		ParseTree t = new ParseTree("drop", children);
 		return t;
 	}
 	
