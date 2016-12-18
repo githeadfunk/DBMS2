@@ -22,7 +22,6 @@ public class PTConstruct {
 		return t;
 	}
 	
-	
 	public ParseTree select(){
 		int count = 0;
 		int from_index = 0, where_index = 0, order_index = 0, distinct_flag = 0, order_flag = 0;
@@ -208,12 +207,13 @@ public class PTConstruct {
 	}
 	
 	public ParseTree drop(){
-		System.out.println(statement.get(2));
-		ParseTree t = new ParseTree(statement.get(2));
+		List<ParseTree> children = new ArrayList<ParseTree>();
+		children.add(new ParseTree(statement.get(2)));
+		ParseTree t = new ParseTree("drop", children);
 		return t;
 	}
 	
-    public ParseTree delete(){
+	public ParseTree delete(){
     	int count = 0;
     	int where_index = 0;
 		for(String s : this.statement){
